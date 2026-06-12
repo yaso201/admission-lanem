@@ -1,0 +1,21 @@
+{
+  "name": "@emela/applicant",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@emela/design-system": "workspace:*",
+    "astro": "^5.6.0"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "html-validate": "^11.5.3",
+    "pa11y": "^9.1.1"
+  }
+}

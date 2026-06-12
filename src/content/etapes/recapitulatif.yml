@@ -1,0 +1,13 @@
+eyebrow: "\xC9tape 4 \xB7 R\xE9capitulatif"
+titre: "V\xE9rifiez puis payez"
+description: "Relisez votre candidature. Vous pouvez modifier chaque section avant le paiement \u2014 rien n'est d\xE9finitif tant que vous n'avez pas pay\xE9."
+points:
+  - icon: i-pencil
+    titre: "Relecture libre"
+    detail: "Modifiez n'importe quelle section avant de payer."
+  - icon: i-envelope
+    titre: "Le paiement vaut soumission"
+    detail: "Votre dossier est transmis d\xE8s le paiement confirm\xE9."
+  - icon: i-clock
+    titre: "R\xE9ponse sous 5 \xE0 10 jours"
+    detail: "Suivi en ligne par lien s\xE9curis\xE9."

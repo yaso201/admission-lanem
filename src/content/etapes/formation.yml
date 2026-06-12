@@ -1,0 +1,13 @@
+eyebrow: "Candidature \xB7 rentr\xE9e 2026"
+titre: "D\xE9posez votre candidature"
+description: "Commencez par choisir votre formation et la session qui vous convient. Le reste se fait en quelques minutes."
+points:
+  - icon: i-clock2
+    titre: "\u2248 6 minutes"
+    detail: "Quatre \xE9tapes courtes, sans jargon."
+  - icon: i-refresh
+    titre: "Reprise possible"
+    detail: "Votre progression est enregistr\xE9e automatiquement."
+  - icon: i-bookmark
+    titre: "Pi\xE8ces PDF ou JPG"
+    detail: "Pr\xE9parez vos justificatifs, taille indiqu\xE9e \xE0 l'\xE9tape 3."

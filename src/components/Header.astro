@@ -1,0 +1,114 @@
+---
+/**
+ * Header.astro — En-tête public admission LaNEM (Direction B)
+ * -----------------------------------------------------------
+ * Liseré utilitaire violet (descriptif + tél/email cliquables)
+ * + barre principale blanche (sceau + wordmark + CTA « Suivre mon dossier »).
+ *
+ * Rendu une seule fois par TunnelLayout / LegalLayout — ne plus dupliquer
+ * le <header class="site-header"> dans les pages.
+ *
+ * La barre de PROGRESSION reste hors de ce composant (gérée par chaque
+ * page du tunnel, juste sous le header) — décision produit conservée.
+ *
+ * Prérequis : déposer le sceau dans `public/lanem-seal.png`.
+ */
+import { ecole } from '../config/ecole';
+const { identity, contact } = ecole;
+
+interface Props {
+  /** Lien du bouton principal. Défaut : /suivi */
+  suiviHref?: string;
+  /** Lien « Besoin d'aide ? ». Défaut : WhatsApp (aide instantanée). */
+  aideHref?: string;
+}
+const { suiviHref = '/suivi', aideHref = ecole.contact.whatsapp } = Astro.props;
+---
+
+<header class="hdb">
+  <div class="hdb-util">
+    <div class="hdb-util-inner">
+      <span class="hdb-tagline">{identity.subtitle} · {contact.addressShort}</span>
+      <div class="hdb-util-contact">
+        <a class="hdb-util-link" href={contact.phoneHref} aria-label={`Téléphone : ${contact.phone}`}>
+          <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M222.37,158.46l-47.11-21.11-.13-.06a16,16,0,0,0-15.17,1.4,8.12,8.12,0,0,0-.75.56L134.87,160c-15.42-7.49-31.34-23.29-38.83-38.51l20.78-24.71c.2-.25.39-.5.57-.77a16,16,0,0,0,1.32-15.06l0-.12L97.54,33.64a16,16,0,0,0-16.62-9.52A56.26,56.26,0,0,0,32,80c0,79.4,64.6,144,144,144a56.26,56.26,0,0,0,55.88-48.92A16,16,0,0,0,222.37,158.46Z"></path></svg>
+          <span class="ul-label">{contact.phone}</span>
+        </a>
+        <a class="hdb-util-link" href={`mailto:${contact.admissionsEmail}`} aria-label={`E-mail : ${contact.admissionsEmail}`}>
+          <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"></path></svg>
+          <span class="ul-label">{contact.admissionsEmail}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hdb-main">
+    <div class="hdb-main-inner">
+      <a class="hdb-brand" href="/" aria-label={`${identity.name} — Accueil`}>
+        <img class="hdb-seal" src="/lanem-seal.png" alt="" width="46" height="46" />
+        <span class="hdb-lockup">
+          <span class="hdb-word">LaNEM</span>
+          <span class="hdb-sub">Admissions · 2026</span>
+        </span>
+      </a>
+      <div class="hdb-actions">
+        <a class="hdb-help" href={aideHref} aria-label="Besoin d'aide ? Contacter via WhatsApp">
+          <svg class="ico" viewBox="0 0 256 256" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a12,12,0,1,1-12-12A12,12,0,0,1,144,176ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-1.4c18.5-3.71,32-17.84,32-34.6C168,88.15,150.06,72,128,72Z"></path></svg>
+          <span>Besoin d'aide&nbsp;?</span>
+        </a>
+        <a class="hdb-cta" href={suiviHref} aria-label="Suivre mon dossier">
+          <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72Zm0,128H40V56H92.69l27.32,27.31A15.86,15.86,0,0,0,131.31,88H216Z"></path></svg>
+          <span class="cta-label">Suivre mon dossier</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hdb { position: sticky; top: 0; z-index: var(--z-sticky); }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* Liseré utilitaire (violet) */
+  .hdb-util { background: var(--violet); color: rgba(255, 255, 255, 0.9); }
+  .hdb-util-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-2) var(--space-8); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); min-height: 34px; }
+  .hdb-tagline { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.74); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdb-util-contact { display: flex; align-items: center; gap: var(--space-6); }
+  .hdb-util-link { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-xs); color: rgba(255, 255, 255, 0.9); text-decoration: none; white-space: nowrap; transition: color var(--duration-fast) var(--ease-out); }
+  .hdb-util-link svg { fill: var(--gold); }
+  .hdb-util-link:hover { color: #fff; }
+
+  /* Barre principale (blanche) */
+  .hdb-main { background: var(--surface-paper); border-bottom: 1px solid var(--border-default); }
+  .hdb-main-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-8); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); }
+
+  .hdb-brand { display: inline-flex; align-items: center; gap: var(--space-4); text-decoration: none; }
+  .hdb-seal { width: 46px; height: 46px; object-fit: contain; flex-shrink: 0; display: block; }
+  .hdb-lockup { display: flex; flex-direction: column; line-height: 1; }
+  .hdb-word { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-900); }
+  .hdb-sub { margin-top: 4px; font-size: var(--text-2xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--violet); }
+
+  .hdb-actions { display: flex; align-items: center; gap: var(--space-5); }
+  .hdb-help { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); font-weight: var(--weight-medium); text-decoration: none; white-space: nowrap; transition: color var(--duration-fast) var(--ease-out); }
+  .hdb-help svg { fill: var(--text-tertiary); }
+  .hdb-help:hover, .hdb-help:hover svg { color: var(--violet); fill: var(--violet); }
+
+  .hdb-cta { display: inline-flex; align-items: center; gap: var(--space-3); height: 42px; padding: 0 var(--space-6); border-radius: var(--radius-sm); background: var(--violet); color: #fff; font-family: var(--font-sans); font-size: var(--text-sm); font-weight: var(--weight-semibold); text-decoration: none; white-space: nowrap; transition: background var(--duration-fast) var(--ease-out); }
+  .hdb-cta svg { fill: var(--gold); }
+  .hdb-cta:hover { background: var(--violet-deep); }
+
+  @media (max-width: 680px) {
+    .hdb-tagline { display: none; }
+    .hdb-util-inner { justify-content: flex-end; }
+  }
+  @media (max-width: 600px) {
+    .hdb-util-inner, .hdb-main-inner { padding-left: var(--space-5); padding-right: var(--space-5); }
+    .hdb-sub { display: none; }
+    .hdb-word { font-size: 20px; }
+    .hdb-help span { display: none; }
+    .hdb-cta .cta-label { display: none; }
+    .hdb-cta { padding: 0; width: 42px; justify-content: center; }
+    .hdb-util-link .ul-label { display: none; }
+  }
+</style>

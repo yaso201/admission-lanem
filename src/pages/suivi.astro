@@ -1,0 +1,664 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+---
+<TunnelLayout title="Suivi de candidature" footer="full">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .suivi { max-width: 680px; margin: 0 auto; padding: var(--space-8) var(--space-5); }
+  .suivi-eyebrow { display: block; margin-bottom: var(--space-3); color: var(--violet); }
+  .suivi h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: var(--space-7); }
+
+  /* Status anchor card (violet) */
+  .status-card { background: var(--violet); color: #fff; border-radius: var(--radius-xl); padding: var(--space-7); }
+  .status-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; }
+  .status-prog { font-size: var(--text-lg); font-weight: 700; }
+  .status-name { font-size: var(--text-sm); color: rgba(255,255,255,0.74); margin-top: 2px; }
+  .status-badge { display: inline-flex; align-items: center; gap: var(--space-3); padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.14); color: #fff; font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+  .status-badge .d { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+  .status-meta { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid rgba(255,255,255,0.16); display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-7); font-size: var(--text-sm); color: rgba(255,255,255,0.74); }
+  .status-meta span { display: inline-flex; align-items: center; gap: var(--space-3); }
+  .status-meta .num { font-family: var(--font-mono); color: #fff; white-space: nowrap; }
+
+  .card { background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-top: var(--space-5); }
+  .card-head { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-subtle); background: var(--sand-25); font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+  .card-body { padding: var(--space-6); }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; }
+  .tl-row { display: flex; gap: var(--space-5); padding-bottom: var(--space-7); position: relative; }
+  .tl-row:last-child { padding-bottom: 0; }
+  .tl-row::before { content: ''; position: absolute; left: 17px; top: 36px; bottom: -4px; width: 2px; background: var(--sand-200); }
+  .tl-row:last-child::before { display: none; }
+  .tl-row.is-done::before { background: var(--lagoon); }
+  .tl-dot { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .tl-row.is-done .tl-dot { background: var(--lagoon-soft); color: var(--lagoon-deep); }
+  .tl-row.is-current .tl-dot { background: var(--violet-soft); color: var(--violet); border: 1.5px solid var(--violet); }
+  .tl-row.is-future .tl-dot { background: var(--surface-paper); color: var(--sand-500); border: 1.5px solid var(--border-strong); }
+  .tl-body { padding-top: 4px; flex: 1; min-width: 0; }
+  .tl-name { font-size: var(--text-base); font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .tl-row.is-future .tl-name { color: var(--text-tertiary); font-weight: 500; }
+  .tl-date { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 3px; }
+  .tl-now-badge { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--violet); background: var(--violet-soft); padding: 2px 8px; border-radius: 999px; }
+  .tl-now-badge--cond { color: var(--accent-700); background: var(--accent-100); }
+
+  /* Docs checklist */
+  .docs { display: flex; flex-direction: column; gap: var(--space-4); }
+  .doc-row { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-sm); }
+  .doc-row .ck { width: 22px; height: 22px; border-radius: 50%; background: var(--lagoon-soft); color: var(--lagoon-deep); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .doc-row .nm { font-weight: 500; color: var(--text-primary); }
+  .doc-row .st { margin-left: auto; font-size: var(--text-xs); color: var(--lagoon-deep); font-weight: 600; text-align: right; }
+  .doc-row.is-await .ck { background: var(--accent-100); color: var(--accent-700); }
+  .doc-row.is-await .st { color: var(--accent-700); }
+
+  .ro-note { margin-top: var(--space-7); display: flex; gap: var(--space-3); align-items: center; justify-content: center; font-size: var(--text-xs); color: var(--text-tertiary); text-align: center; }
+  .ro-note svg { flex-shrink: 0; }
+
+  /* Carte d'action contextuelle (ACO / INC / ACC / REF / INS) */
+  .status-badge.is-aco { background: rgba(245,158,11,0.22); }
+  .status-badge.is-aco .d { background: var(--gold); }
+
+  .aco-card { margin-top: var(--space-5); background: var(--accent-50); border: 1.5px solid var(--gold); border-radius: var(--radius-xl); padding: var(--space-6); }
+  @media (min-width: 480px) { .suivi { padding: var(--space-10) var(--space-7) var(--space-12); } .status-card { padding: var(--space-7) var(--space-8); } .aco-card { padding: var(--space-7) var(--space-8); } }
+  .aco-card-top { display: flex; gap: var(--space-4); align-items: flex-start; }
+  .aco-card-ic { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--accent-100); color: var(--accent-700); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .aco-card-head { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .aco-card-kicker { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-700); }
+  .aco-card-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: var(--clay-deep); margin-top: 2px; }
+  .aco-card-text { font-size: var(--text-sm); color: var(--clay-deep); margin-top: var(--space-3); line-height: var(--leading-normal); }
+  .aco-steps { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid #F1DDBF; display: flex; flex-direction: column; gap: var(--space-4); }
+  .aco-step { display: flex; gap: var(--space-3); font-size: var(--text-sm); color: var(--clay-deep); align-items: flex-start; line-height: var(--leading-normal); }
+  .aco-step svg { color: var(--ochre); flex-shrink: 0; margin-top: 2px; }
+  .aco-step strong { font-weight: 700; }
+  .aco-actions { margin-top: var(--space-6); display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center; }
+  .aco-actions .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .aco-actions .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+  .aco-hint { font-size: var(--text-xs); color: var(--clay-deep); display: inline-flex; align-items: center; gap: var(--space-2); }
+
+  /* Variante succès (ACC / INS) et neutre (REF) */
+  .aco-card.is-success { background: var(--lagoon-soft); border-color: var(--lagoon); }
+  .aco-card.is-success .aco-card-ic { background: rgba(14,124,134,0.14); color: var(--lagoon-deep); }
+  .aco-card.is-success .aco-card-kicker { color: var(--lagoon-deep); }
+  .aco-card.is-success .aco-card-title,
+  .aco-card.is-success .aco-card-text,
+  .aco-card.is-success .aco-step { color: var(--lagoon-deep); }
+  .aco-card.is-success .aco-steps { border-top-color: rgba(14,124,134,0.25); }
+  .aco-card.is-neutral { background: var(--sand-25); border-color: var(--border-strong); }
+  .aco-card.is-neutral .aco-card-ic { background: var(--sand-100); color: var(--sand-600); }
+  .aco-card.is-neutral .aco-card-kicker { color: var(--text-tertiary); }
+  .aco-card.is-neutral .aco-card-title, .aco-card.is-neutral .aco-card-text { color: var(--text-primary); }
+
+  /* Offre frais 2 (ACC) */
+  .ofr-amount { display: flex; align-items: baseline; gap: var(--space-3); margin-top: var(--space-4); }
+  .ofr-amount .v { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--lagoon-deep); }
+  .ofr-amount .c { font-size: var(--text-sm); color: var(--lagoon-deep); font-weight: 600; }
+  .ofr-field { margin-top: var(--space-5); }
+  .ofr-field label { display: block; font-size: var(--text-xs); font-weight: 600; color: var(--lagoon-deep); margin-bottom: var(--space-2); }
+  .ofr-field input { width: 100%; max-width: 240px; }
+  .consent-row { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-xs); color: var(--lagoon-deep); line-height: var(--leading-normal); margin-top: var(--space-4); }
+  .consent-row input[type="checkbox"] { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; accent-color: var(--lagoon-deep); }
+  .consent-row a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .ofr-channels { margin-top: var(--space-6); display: flex; gap: var(--space-4); flex-wrap: wrap; }
+
+  .act-msg { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .act-msg.is-error { color: var(--terra, #B3261E); }
+  .act-msg.is-ok { color: var(--lagoon-deep); }
+
+  /* État bloqué (pas de dossier) */
+  .blocked { margin-top: var(--space-6); padding: var(--space-7); background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-xl); text-align: center; }
+  .blocked p { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-5); }
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V96H208ZM72,64H48V48H72Zm120,0H184V48h8Z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 256 256"><path d="M42.76,50.78A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.36,0,27.27-4.34,41.49-16.78A8,8,0,0,0,232,177V64a8,8,0,0,0-13.27-6C187.94,84.69,165.66,73.66,139.55,60.74,112.66,47.43,82.21,32.37,42.76,50.78Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm56,112H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48a8,8,0,0,1,0,16Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 256 256"><path d="M208,80H172V52a44,44,0,0,0-88,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM100,52a28,28,0,0,1,56,0V80H100Zm28,128a16,16,0,1,1,16-16A16,16,0,0,1,128,180Z"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 256 256"><path d="M251.76,88.94l-120-64a8,8,0,0,0-7.52,0l-120,64a8,8,0,0,0,0,14.12L32,117.87v48.42a15.91,15.91,0,0,0,4.06,10.65C49.16,191.53,78.51,216,128,216a130,130,0,0,0,48-8.76V240a8,8,0,0,0,16,0V199.51a115.63,115.63,0,0,0,27.94-22.57A15.91,15.91,0,0,0,224,166.29V117.87l27.76-14.81a8,8,0,0,0,0-14.12ZM128,200c-43.27,0-68.72-21.14-80-33.71V126.4l76.24,40.66a8,8,0,0,0,7.52,0L176,143.47v46.34C163.4,195.69,147.52,200,128,200Zm80-33.75a97.83,97.83,0,0,1-16,14.25V134.93l16-8.53ZM128,150.93,25,96,128,41.07,231,96Z"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 256 256"><path d="M216,144v64a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H200V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm-8,144a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v32A8,8,0,0,1,120,168ZM124,84a12,12,0,1,1,12,12A12,12,0,0,1,124,84Z"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 256 256"><path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,40.65,201.57,88H54.43Z"/></symbol>
+</svg>
+
+<main class="suivi" id="main">
+  <span class="t-overline suivi-eyebrow">Suivi de candidature</span>
+  <h1>Où en est votre dossier&nbsp;?</h1>
+
+  <div class="status-card" id="sv-status" hidden>
+    <div class="status-top">
+      <div>
+        <div class="status-prog" id="sv-prog">—</div>
+        <div class="status-name" id="sv-name">—</div>
+      </div>
+      <span class="status-badge" id="sv-badge"><span class="d"></span><span id="sv-badge-txt">—</span></span>
+    </div>
+    <div class="status-meta">
+      <span class="num" id="sv-num">—</span>
+      <span id="sv-session-meta" hidden><svg class="ico-sm"><use href="#i-cal"/></svg><span id="sv-session-txt"></span></span>
+    </div>
+  </div>
+
+  <!-- Carte d'action contextuelle (rendue selon le statut : INC / ACO / ACC / REF / INS) -->
+  <div id="sv-action"></div>
+
+  <div class="card" id="sv-tl-card" hidden>
+    <div class="card-head">Avancement</div>
+    <div class="card-body"><div class="timeline" id="sv-timeline"></div></div>
+  </div>
+
+  <div class="card" id="sv-pay-card" hidden>
+    <div class="card-head">Paiements</div>
+    <div class="card-body"><div class="docs" id="sv-pay"></div></div>
+  </div>
+
+  <div class="card" id="sv-docs-card" hidden>
+    <div class="card-head">Documents</div>
+    <div class="card-body"><div class="docs" id="sv-docs"></div></div>
+  </div>
+
+  <!-- G2 (DAT-1) : droit à l'effacement self-service -->
+  <div class="card" id="sv-data-card" hidden>
+    <div class="card-head">Mes données</div>
+    <div class="card-body">
+      <p class="ro-note" style="margin:0 0 14px;justify-content:flex-start;text-align:left;">
+        Vos droits (accès, rectification, effacement) sont décrits dans
+        <a href="/legal/donnees-personnelles" style="text-decoration:underline;text-underline-offset:2px;">Mes données personnelles</a>.
+      </p>
+      <div id="sv-delete-zone">
+        <button type="button" class="em-btn em-btn--secondary" id="sv-delete-open">Demander l'effacement de mes données</button>
+        <div id="sv-delete-confirm" hidden style="margin-top:14px;">
+          <label class="consent-row" style="color:var(--text-secondary);">
+            <input type="checkbox" id="sv-delete-cb" />
+            <span>Je comprends que cette action est <strong>irréversible</strong> : mon identité et mes pièces seront supprimées, ma candidature close. Seules la preuve de mes consentements et les pièces comptables sont conservées, dé-identifiées (loi 2017-20 art. 29, OHADA).</span>
+          </label>
+          <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
+            <button type="button" class="em-btn em-btn--secondary" id="sv-delete-go" disabled>Effacer définitivement</button>
+            <button type="button" class="em-btn em-btn--ghost" id="sv-delete-cancel">Annuler</button>
+          </div>
+        </div>
+        <div class="act-msg" id="sv-delete-msg" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="blocked" id="sv-blocked" hidden>
+    <p id="sv-blocked-msg">Aucun dossier en cours sur cet appareil.</p>
+    <a class="em-btn em-btn--primary" href="/reprise">Reprendre mon dossier</a>
+  </div>
+
+  <p class="ro-note" id="sv-note" hidden><svg class="ico-sm"><use href="#i-lock"/></svg>Pour toute question, contactez le service des admissions — vos décisions vous sont aussi notifiées par e-mail.</p>
+</main>
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+/* LOT F (F6/F7/F8) — suivi 100 % DATA-DRIVEN sur get_dossier : statut, timeline,
+   pièces, paiements, actions contextuelles (INC re-soumission, ACO dépôt diplôme,
+   ACC offre frais d'inscription). Rendu DOM sûr (textContent). */
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  AT.onTokenExpired = function () { AT.navigateTo('/reprise'); };
+
+  var STATUS = {
+    BRO: { label: 'Brouillon', step: 0 },
+    SOP: { label: 'Soumission provisoire', step: 0 },
+    SOU: { label: 'Candidature soumise', step: 1 },
+    ETU: { label: 'En cours d’étude', step: 1 },
+    INC: { label: 'Complément requis', step: 1 },
+    ADM: { label: 'Admissible', step: 2 },
+    ATT: { label: 'Liste d’attente', step: 2 },
+    ACO: { label: 'Admis·e sous réserve', step: 2 },
+    REF: { label: 'Candidature non retenue', step: 2 },
+    ACC: { label: 'Admission confirmée', step: 3 },
+    DES: { label: 'Désistement', step: 3 },
+    INS: { label: 'Inscrit·e', step: 4 }
+  };
+  var STEPS = [
+    { name: 'Dépôt de la candidature', icon: 'i-flag' },
+    { name: 'Étude du dossier', icon: 'i-search' },
+    { name: 'Décision d’admission', icon: 'i-cap' },
+    { name: 'Confirmation de la place', icon: 'i-bank' },
+    { name: 'Inscription', icon: 'i-check' }
+  ];
+  var STEP_NOTE = {
+    BRO: 'Complétez vos pièces puis réglez les frais de dossier pour soumettre.',
+    SOP: 'En attente de la confirmation de votre paiement par l’établissement.',
+    SOU: 'Votre dossier est dans la file d’étude de la commission.',
+    ETU: 'Votre dossier est en cours d’étude par la commission.',
+    INC: 'Un complément vous est demandé — voir le détail ci-dessus.',
+    ADM: 'La Direction confirmera votre admission très prochainement.',
+    ATT: 'Vous serez recontacté·e si une place se libère.',
+    ACO: 'Sous réserve de votre diplôme du Bac — voir le détail ci-dessus.',
+    REF: 'Le jury n’a pas retenu votre candidature pour cette session.',
+    ACC: 'Réservez votre place en réglant les frais d’inscription ci-dessus.',
+    DES: 'Vous vous êtes désisté·e de cette candidature.',
+    INS: 'Bienvenue ! Votre inscription est finalisée.'
+  };
+
+  function h(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text != null) { e.textContent = text; }
+    return e;
+  }
+  function svgUse(id, cls) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', cls || 'ico');
+    var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#' + id);
+    svg.appendChild(use);
+    return svg;
+  }
+  function show(id) { document.getElementById(id).hidden = false; }
+
+  /* ---- Carte d'action générique (réutilise le style aco-card) ---- */
+  function actionCard(opts) {
+    var card = h('div', 'aco-card' + (opts.tone ? ' is-' + opts.tone : ''));
+    var top = h('div', 'aco-card-top');
+    var ic = h('span', 'aco-card-ic'); ic.appendChild(svgUse(opts.icon || 'i-info', 'ico-lg')); top.appendChild(ic);
+    var head = h('span', 'aco-card-head');
+    head.appendChild(h('span', 'aco-card-kicker', opts.kicker || ''));
+    head.appendChild(h('span', 'aco-card-title', opts.title || ''));
+    if (opts.text) { head.appendChild(h('span', 'aco-card-text', opts.text)); }
+    top.appendChild(head);
+    card.appendChild(top);
+    return card;
+  }
+  function actMsg(card) {
+    var m = h('div', 'act-msg');
+    m.setAttribute('role', 'status'); m.setAttribute('aria-live', 'polite');
+    card.appendChild(m);
+    return m;
+  }
+  function setMsg(el, kind, text) {
+    el.className = 'act-msg' + (kind ? ' is-' + kind : '');
+    el.textContent = text || '';
+  }
+
+  /* ---- INC : motif + correction + re-soumission ---- */
+  function buildInc(d) {
+    var card = actionCard({
+      icon: 'i-info', kicker: 'Complément requis · INC',
+      title: 'Votre dossier doit être complété',
+      text: d.motif_incompletude || 'Un élément de votre dossier doit être corrigé.'
+    });
+    var steps = h('div', 'aco-steps');
+    var s1 = h('span', 'aco-step'); s1.appendChild(svgUse('i-upload', 'ico-sm'));
+    var t1 = h('span'); t1.appendChild(document.createTextNode('Corrigez ou complétez vos pièces depuis la page '));
+    var a1 = h('a', null, 'Pièces justificatives'); a1.href = '/pieces';
+    t1.appendChild(a1); t1.appendChild(document.createTextNode('.'));
+    s1.appendChild(t1); steps.appendChild(s1);
+    var s2 = h('span', 'aco-step'); s2.appendChild(svgUse('i-check', 'ico-sm'));
+    s2.appendChild(h('span', null, 'Puis re-soumettez votre dossier : il repartira en étude.'));
+    steps.appendChild(s2);
+    card.appendChild(steps);
+    var actions = h('div', 'aco-actions');
+    var btn = h('button', 'em-btn em-btn--primary em-btn--lg', 'Re-soumettre mon dossier');
+    btn.type = 'button';
+    actions.appendChild(btn);
+    card.appendChild(actions);
+    var msg = actMsg(card);
+    btn.addEventListener('click', function () {
+      btn.setAttribute('disabled', '');
+      setMsg(msg, '', 'Re-soumission…');
+      AT.api.resubmitComplement(function (res) {
+        if (res.ok) {
+          setMsg(msg, 'ok', 'Dossier re-soumis — il repart en étude.');
+          window.location.reload();
+        } else {
+          btn.removeAttribute('disabled');
+          setMsg(msg, 'error', (res.error && res.error.message) || 'Re-soumission impossible.');
+        }
+      });
+    });
+    return card;
+  }
+
+  /* ---- ACO : dépôt du diplôme (pièce diplome_bac) ---- */
+  function buildAco(d) {
+    var card = actionCard({
+      icon: 'i-cap', kicker: 'Admission conditionnelle · ACO',
+      title: 'Admis·e sous réserve d’obtention du Bac',
+      text: 'Félicitations ! Votre dossier est retenu. Votre admission devient définitive dès que vous fournissez votre diplôme du Bac et qu’il est vérifié par l’établissement.'
+    });
+    var steps = h('div', 'aco-steps');
+    var s1 = h('span', 'aco-step'); s1.appendChild(svgUse('i-upload', 'ico-sm'));
+    s1.appendChild(h('span', null, 'Ajoutez votre diplôme (ou relevé de réussite) du Bac ci-dessous.'));
+    steps.appendChild(s1);
+    var s2 = h('span', 'aco-step'); s2.appendChild(svgUse('i-info', 'ico-sm'));
+    s2.appendChild(h('span', null, 'L’Administratif vérifie le diplôme, puis la Direction lève la condition. La décision n’est jamais automatique.'));
+    steps.appendChild(s2);
+    card.appendChild(steps);
+
+    var diplome = (d.pieces || []).filter(function (p) { return p.code === 'diplome_bac'; })[0];
+    var actions = h('div', 'aco-actions');
+    var msg = null;
+    if (diplome && diplome.statut === 'deposee') {
+      var done = h('span', 'aco-hint');
+      done.appendChild(svgUse('i-check', 'ico-sm'));
+      done.appendChild(document.createTextNode('Diplôme transmis — en attente de vérification par l’établissement.'));
+      actions.appendChild(done);
+      card.appendChild(actions);
+    } else {
+      var input = document.createElement('input');
+      input.type = 'file'; input.accept = '.pdf,.jpg,.jpeg,.png'; input.hidden = true;
+      var btn = h('button', 'em-btn em-btn--primary em-btn--lg', null);
+      btn.type = 'button';
+      btn.appendChild(svgUse('i-upload', 'ico'));
+      btn.appendChild(document.createTextNode('Ajouter mon diplôme du Bac'));
+      btn.addEventListener('click', function () { input.click(); });
+      actions.appendChild(btn); actions.appendChild(input);
+      card.appendChild(actions);
+      msg = actMsg(card);
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        if (!file) { return; }
+        if (file.size > 5 * 1024 * 1024) { setMsg(msg, 'error', 'Fichier trop volumineux (max 5 Mo).'); return; }
+        btn.setAttribute('disabled', '');
+        setMsg(msg, '', 'Envoi du diplôme…');
+        AT.api.uploadPieceFile('diplome_bac', file, function (res) {
+          if (res.ok) {
+            setMsg(msg, 'ok', 'Diplôme transmis — en attente de vérification.');
+            window.location.reload();
+          } else {
+            btn.removeAttribute('disabled');
+            setMsg(msg, 'error', (res.error && res.error.message) || 'Envoi impossible. Réessayez.');
+          }
+        });
+      });
+    }
+    return card;
+  }
+
+  /* ---- ACC : offre — frais d'inscription (F7) ---- */
+  function buildAcc(d) {
+    var card = actionCard({
+      icon: 'i-bank', kicker: 'Admission confirmée · votre place vous attend', tone: 'success',
+      title: 'Réservez votre place — frais d’inscription',
+      text: 'Votre admission est prononcée par la Direction. Pour finaliser votre inscription, réglez les frais d’inscription (un acompte de scolarité est possible dans le même règlement).'
+    });
+
+    var amount = h('div', 'ofr-amount');
+    var amtV = h('span', 'v', '…'); amount.appendChild(amtV);
+    amount.appendChild(h('span', 'c', 'FCFA'));
+    card.appendChild(amount);
+    var f2 = d.paiement && d.paiement.frais2;
+    if (f2 && f2.montant_xof != null) {
+      amtV.textContent = AT.fmtXOF(f2.montant_xof);
+    } else {
+      AT.api.getFrais({ session: d.session && d.session.id }, function (res) {
+        if (res.ok && res.data && res.data.frais2 && res.data.frais2.montant_xof != null) {
+          amtV.textContent = AT.fmtXOF(res.data.frais2.montant_xof);
+        } else { amtV.textContent = '—'; }
+      });
+    }
+    if (d.bourses && d.bourses.valide) {
+      card.appendChild(h('span', 'aco-card-text',
+        'Vos bourses validées seront appliquées : le montant exact (réduit) est calculé par l’établissement à l’enregistrement du paiement.'));
+    }
+
+    var field = h('div', 'ofr-field');
+    var lab = h('label', null, 'Acompte de scolarité (optionnel, FCFA)');
+    lab.htmlFor = 'ofr-acompte';
+    field.appendChild(lab);
+    var acompte = document.createElement('input');
+    acompte.type = 'number'; acompte.min = '0'; acompte.step = '1000'; acompte.id = 'ofr-acompte';
+    acompte.className = 'em-input'; acompte.placeholder = '0';
+    field.appendChild(acompte);
+    card.appendChild(field);
+
+    function consent(idSuffix, textBefore, linkText, href) {
+      var row = h('label', 'consent-row');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.id = 'ofr-' + idSuffix;
+      row.appendChild(cb);
+      var span = h('span', null, textBefore + ' ');
+      var a = h('a', null, linkText); a.href = href; a.target = '_blank'; a.rel = 'noopener';
+      span.appendChild(a); span.appendChild(document.createTextNode('.'));
+      row.appendChild(span);
+      card.appendChild(row);
+      return cb;
+    }
+    var cbRefund = consent('refund', 'J’ai pris connaissance du caractère non remboursable des frais, selon la', 'politique de remboursement', '/legal/politique-de-remboursement');
+    var cbTransfer = consent('transfer', 'J’accepte le transfert de mes données vers le campus pour mon inscription, selon le', 'consentement de transfert', '/legal/consentement-transfert-donnees');
+
+    var channels = h('div', 'ofr-channels');
+    var msg = null;
+    function payBtn(label, channel, primary) {
+      var b = h('button', 'em-btn ' + (primary ? 'em-btn--primary' : 'em-btn--secondary'), label);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        if (!cbRefund.checked || !cbTransfer.checked) {
+          setMsg(msg, 'error', 'Cochez les deux consentements pour continuer.');
+          return;
+        }
+        var ac = parseInt(acompte.value || '0', 10) || 0;
+        b.setAttribute('disabled', '');
+        setMsg(msg, '', 'Enregistrement…');
+        AT.api.enrollmentPay(channel, { acompte: ac, consentRefund: true, consentTransfer: true }, function (res) {
+          if (!res.ok) {
+            b.removeAttribute('disabled');
+            setMsg(msg, 'error', (res.error && res.error.message) || 'Opération impossible. Réessayez.');
+            return;
+          }
+          var desc = res.data || {};
+          /* LOT KKIAPAY : canal online avec widget réel (mode ≠ mock) — le webhook fait
+             foi, on attend la bascule ACC→INS avant de recharger. DEV mock : inchangé. */
+          if (channel === 'online' && desc.mode && desc.mode !== 'mock' && desc.public_key) {
+            setMsg(msg, '', 'Paiement sécurisé KkiaPay…');
+            AT.kkiapay.launch(desc, {
+              success: function () {
+                setMsg(msg, 'ok', 'Paiement transmis — confirmation en cours…');
+                AT.kkiapay.pollDossierStatus(['INS'], function () { window.location.reload(); });
+              },
+              failed: function () {
+                b.removeAttribute('disabled');
+                setMsg(msg, 'error', 'Paiement refusé ou annulé. Aucun montant débité — réessayez.');
+              },
+              unavailable: function () {
+                b.removeAttribute('disabled');
+                setMsg(msg, 'error', 'Service de paiement indisponible — réessayez ou choisissez virement/espèces.');
+              }
+            });
+            return;
+          }
+          setMsg(msg, 'ok', channel === 'online'
+            ? 'Paiement initié — vous recevrez votre reçu par e-mail dès confirmation.'
+            : 'Déclaration enregistrée — les instructions de paiement vous ont été envoyées par e-mail.');
+          setTimeout(function () { window.location.reload(); }, 2200);
+        });
+      });
+      return b;
+    }
+    channels.appendChild(payBtn('Payer en ligne', 'online', true));
+    channels.appendChild(payBtn('Par virement', 'bank', false));
+    channels.appendChild(payBtn('En espèces (Direction)', 'cash', false));
+    card.appendChild(channels);
+    msg = actMsg(card);
+    return card;
+  }
+
+  function buildSimple(kicker, title, text, tone, icon) {
+    return actionCard({ icon: icon || 'i-info', kicker: kicker, title: title, text: text, tone: tone });
+  }
+
+  /* ---- Timeline ---- */
+  function renderTimeline(statut) {
+    var cur = (STATUS[statut] || {}).step || 0;
+    var wrap = document.getElementById('sv-timeline');
+    wrap.textContent = '';
+    STEPS.forEach(function (s, i) {
+      var state = i < cur ? 'is-done' : (i === cur ? 'is-current' : 'is-future');
+      var row = h('div', 'tl-row ' + state);
+      var dot = h('span', 'tl-dot');
+      dot.appendChild(svgUse(i < cur ? 'i-check' : s.icon, 'ico'));
+      row.appendChild(dot);
+      var body = h('span', 'tl-body');
+      var name = h('span', 'tl-name', s.name);
+      if (i === cur) {
+        var b = h('span', 'tl-now-badge' + (statut === 'ACO' || statut === 'INC' ? ' tl-now-badge--cond' : ''),
+          (STATUS[statut] || {}).label || statut);
+        name.appendChild(b);
+      }
+      body.appendChild(name);
+      if (i === cur && STEP_NOTE[statut]) { body.appendChild(h('span', 'tl-date', STEP_NOTE[statut])); }
+      row.appendChild(body);
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ---- Paiements ---- */
+  function payRow(label, info) {
+    var ok = info && info.statut === 'confirmed';
+    var row = h('div', 'doc-row' + (ok ? '' : ' is-await'));
+    var ck = h('span', 'ck'); ck.appendChild(svgUse(ok ? 'i-check' : 'i-clock', 'ico-sm ico-xs')); row.appendChild(ck);
+    var nm = h('span', 'nm', label + (info && info.montant_xof != null ? ' — ' + AT.fmtXOF(info.montant_xof) + ' FCFA' : ''));
+    row.appendChild(nm);
+    var st = h('span', 'st', ok ? ('Confirmé' + (info.recu_ref ? ' · reçu ' + info.recu_ref : '')) :
+      (info && info.statut === 'pending' ? 'En attente de confirmation' : 'En attente'));
+    row.appendChild(st);
+    return row;
+  }
+  function renderPay(d) {
+    var wrap = document.getElementById('sv-pay');
+    wrap.textContent = '';
+    var p = d.paiement || {};
+    if (p.frais1) { wrap.appendChild(payRow('Frais de dossier', p.frais1)); }
+    if (p.frais2) { wrap.appendChild(payRow('Frais d’inscription', p.frais2)); }
+    if (p.frais1 || p.frais2) { show('sv-pay-card'); }
+  }
+
+  /* ---- Documents ---- */
+  function renderDocs(d) {
+    var wrap = document.getElementById('sv-docs');
+    wrap.textContent = '';
+    (d.pieces || []).forEach(function (p) {
+      var ok = p.statut === 'deposee';
+      var row = h('div', 'doc-row' + (ok ? '' : ' is-await'));
+      var ck = h('span', 'ck'); ck.appendChild(svgUse(ok ? 'i-check' : 'i-clock', 'ico-sm ico-xs')); row.appendChild(ck);
+      row.appendChild(h('span', 'nm', p.label));
+      row.appendChild(h('span', 'st', ok ? 'Reçue' : (p.requise ? 'Attendue — requise' : 'Optionnelle')));
+      wrap.appendChild(row);
+    });
+    if ((d.pieces || []).length) { show('sv-docs-card'); }
+  }
+
+  /* ---- Chargement ---- */
+  if (!AT.getDossierId() || !AT.getDossierToken()) {
+    show('sv-blocked');
+    return;
+  }
+  AT.api.getDossier(function (res) {
+    if (!res.ok) {
+      if (res.error && res.error.code === 'OTP_RESENT') { AT.navigateTo('/reprise'); return; }
+      document.getElementById('sv-blocked-msg').textContent =
+        (res.error && res.error.message) || 'Impossible de charger votre dossier.';
+      show('sv-blocked');
+      return;
+    }
+    var d = res.data;
+    var info = STATUS[d.statut] || { label: d.statut, step: 0 };
+    document.getElementById('sv-prog').textContent = (d.programme && d.programme.label) || '—';
+    var lvl = d.programme && d.programme.level && d.programme.level.name;
+    document.getElementById('sv-name').textContent =
+      ((d.identite.prenom || '') + ' ' + (d.identite.nom || '')).trim() + (lvl ? ' · ' + lvl : '');
+    document.getElementById('sv-badge-txt').textContent = info.label;
+    if (d.statut === 'ACO' || d.statut === 'INC') { document.getElementById('sv-badge').classList.add('is-aco'); }
+    document.getElementById('sv-num').textContent = d.dossier_id;
+    if (d.session && d.session.label) {
+      var sTxt = d.session.label;
+      if (d.session.is_open && d.session.closes_on) { sTxt += ' · candidatures ouvertes jusqu’au ' + d.session.closes_on; }
+      document.getElementById('sv-session-txt').textContent = sTxt;
+      document.getElementById('sv-session-meta').hidden = false;
+    }
+    show('sv-status');
+
+    var action = document.getElementById('sv-action');
+    if (d.statut === 'INC') { action.appendChild(buildInc(d)); }
+    else if (d.statut === 'ACO') { action.appendChild(buildAco(d)); }
+    else if (d.statut === 'ACC') { action.appendChild(buildAcc(d)); }
+    else if (d.statut === 'REF') {
+      action.appendChild(buildSimple('Décision', 'Candidature non retenue',
+        'Après étude attentive, le jury n’a pas retenu votre candidature pour cette session. Vous pouvez candidater à une prochaine session.', 'neutral'));
+    } else if (d.statut === 'DES') {
+      action.appendChild(buildSimple('Dossier clôturé', 'Candidature close (désistement)',
+        'Votre dossier a été clôturé. Si cette clôture ne correspond pas à votre demande, contactez le service des admissions — vous pouvez déposer une nouvelle candidature sur une session ouverte.', 'neutral'));
+    } else if (d.statut === 'INS') {
+      action.appendChild(buildSimple('Inscription finalisée', 'Bienvenue à LaNEM !',
+        'Votre inscription est confirmée. Vos accès à l’espace étudiant vous parviennent par e-mail.', 'success', 'i-cap'));
+    } else if (d.statut === 'BRO') {
+      var bro = buildSimple('Brouillon', 'Votre candidature n’est pas encore soumise',
+        'Complétez vos pièces puis réglez les frais de dossier pour soumettre votre candidature.', null, 'i-upload');
+      var actions = h('div', 'aco-actions');
+      var go = h('a', 'em-btn em-btn--primary em-btn--lg', 'Reprendre ma candidature');
+      go.href = '/pieces';
+      actions.appendChild(go);
+      bro.appendChild(actions);
+      action.appendChild(bro);
+    }
+
+    renderTimeline(d.statut);
+    renderPay(d);
+    renderDocs(d);
+    show('sv-tl-card');
+    show('sv-note');
+    /* G2 : effacement self-service — pas sur INS (données transférées au campus,
+       l'effacement admission ne porterait plus que sur un dossier déjà clos). */
+    if (d.statut !== 'INS') { initDeleteZone(); show('sv-data-card'); }
+  });
+
+  /* ---- G2 (DAT-1) : droit à l'effacement ---- */
+  function initDeleteZone() {
+    var openBtn = document.getElementById('sv-delete-open');
+    var confirmZone = document.getElementById('sv-delete-confirm');
+    var cb = document.getElementById('sv-delete-cb');
+    var goBtn = document.getElementById('sv-delete-go');
+    var cancelBtn = document.getElementById('sv-delete-cancel');
+    var dmsg = document.getElementById('sv-delete-msg');
+    openBtn.addEventListener('click', function () {
+      openBtn.hidden = true;
+      confirmZone.hidden = false;
+    });
+    cancelBtn.addEventListener('click', function () {
+      confirmZone.hidden = true;
+      openBtn.hidden = false;
+      cb.checked = false;
+      goBtn.setAttribute('disabled', '');
+      setMsg(dmsg, '', '');
+    });
+    cb.addEventListener('change', function () {
+      if (cb.checked) { goBtn.removeAttribute('disabled'); }
+      else { goBtn.setAttribute('disabled', ''); }
+    });
+    goBtn.addEventListener('click', function () {
+      goBtn.setAttribute('disabled', '');
+      setMsg(dmsg, '', 'Effacement en cours…');
+      AT.api.requestDataDeletion(function (res) {
+        if (res.ok) {
+          AT.clearDossier();
+          setMsg(dmsg, 'ok', 'Vos données ont été effacées. Vous allez être redirigé.');
+          setTimeout(function () { window.location.href = '/'; }, 2500);
+        } else if (res.error && (res.error.code === 'OTP_REQUIRED' || res.error.code === 'OTP_RESENT')) {
+          setMsg(dmsg, 'error', 'Par sécurité, re-vérifiez votre identité (code e-mail) puis recommencez.');
+          setTimeout(function () { AT.navigateTo('/reprise'); }, 2200);
+        } else {
+          goBtn.removeAttribute('disabled');
+          setMsg(dmsg, 'error', (res.error && res.error.message) || 'Effacement impossible pour le moment.');
+        }
+      });
+    });
+  }
+})();
+</script>
+
+</TunnelLayout>

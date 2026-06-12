@@ -1,0 +1,100 @@
+# =============================================================
+# emela Admission — Sveltia CMS config
+# -------------------------------------------------------------
+# Backend : GitHub, branche `content` (revue avant merge main).
+# Repo : yaso201/lanem-admission
+# Auth : Cloudflare Worker OAuth (voir AUTH.md ci-dessous).
+# Collections alignées 1:1 sur Astro content collections (config.ts).
+#
+# SÉPARATION DEC-210 :
+#   - Ici = contenu ÉDITORIAL (textes, libellés, messages).
+#   - Les données MÉTIER (frais, programmes, bourses) sont dans
+#     data-imports/ et NE DOIVENT JAMAIS apparaître ici.
+# =============================================================
+
+backend:
+  name: github
+  repo: yaso201/lanem-admission
+  branch: content
+  # Auth Cloudflare Worker OAuth — URL à configurer au déploiement :
+  # base_url: https://lanem-oauth.workers.dev
+
+# Dossier media (images éventuelles du contenu éditorial)
+media_folder: apps/applicant/public/media
+public_folder: /media
+
+# ---- Collections ----
+
+collections:
+
+  # --- Étapes du tunnel (lede blocks) ---
+  - name: etapes
+    label: "Étapes du tunnel"
+    label_singular: "Étape"
+    folder: apps/applicant/src/content/etapes
+    format: yml
+    create: false
+    slug: "{{slug}}"
+    fields:
+      - { name: eyebrow, label: "Eyebrow (sous-titre)", widget: string }
+      - { name: titre, label: "Titre principal", widget: string }
+      - { name: description, label: "Description", widget: text }
+      - name: points
+        label: "Points d'ancrage"
+        widget: list
+        max: 4
+        fields:
+          - { name: icon, label: "Icône (ID SVG)", widget: string, hint: "Ex: i-clock2, i-shield" }
+          - { name: titre, label: "Titre du point", widget: string }
+          - { name: detail, label: "Détail", widget: string }
+
+  # --- Messages de résultat ---
+  - name: messages
+    label: "Messages de résultat"
+    label_singular: "Message"
+    folder: apps/applicant/src/content/messages
+    format: yml
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: titre, label: "Titre", widget: string }
+      - { name: corps, label: "Corps du message", widget: text }
+      - name: variante
+        label: "Variante"
+        widget: select
+        options:
+          - { label: "Succès", value: succes }
+          - { label: "Échec", value: echec }
+          - { label: "SOP", value: sop }
+          - { label: "Info", value: info }
+          - { label: "Confirmation", value: confirmation }
+
+  # --- Messages d'aide / réassurance ---
+  - name: aide
+    label: "Messages d'aide"
+    label_singular: "Message d'aide"
+    folder: apps/applicant/src/content/aide
+    format: yml
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: contexte, label: "Page / contexte", widget: string, hint: "Ex: index, identite, pieces, paiement-echoue" }
+      - { name: titre, label: "Titre (optionnel)", widget: string, required: false }
+      - { name: texte, label: "Texte", widget: text }
+
+  # --- Pages légales (Markdown) ---
+  - name: legal
+    label: "Pages légales"
+    label_singular: "Page légale"
+    folder: apps/applicant/src/content/legal
+    format: frontmatter
+    extension: md
+    create: false
+    delete: false
+    slug: "{{slug}}"
+    identifier_field: titre
+    fields:
+      - { name: titre, label: "Titre de la page", widget: string }
+      - { name: date_effet, label: "Date d'effet", widget: string, required: false, hint: "Ex : 1er septembre 2026" }
+      - { name: version, label: "Version", widget: string, required: false, hint: "Ex : V1.0" }
+      - { name: body, label: "Contenu juridique", widget: markdown }

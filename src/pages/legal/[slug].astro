@@ -1,0 +1,28 @@
+---
+/**
+ * /legal/[slug] — Rendu dynamique des pages légales
+ * --------------------------------------------------
+ * Une seule route pour les 4 pages (CGV, confidentialité, remboursement,
+ * consentement). Le slug = nom du fichier .md dans src/content/legal/.
+ *
+ * SSG : getStaticPaths génère /legal/cgv, /legal/politique-de-confidentialite, etc.
+ */
+import { getCollection, render } from 'astro:content';
+import LegalLayout from '../../layouts/LegalLayout.astro';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('legal');
+  return pages.map((page) => ({
+    params: { slug: page.id },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+const { titre, date_effet, version } = page.data;
+---
+
+<LegalLayout title={titre} dateEffet={date_effet} version={version}>
+  <Content />
+</LegalLayout>

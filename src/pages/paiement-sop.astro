@@ -1,0 +1,148 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const msg = await getEntry('messages', 'sop');
+---
+<TunnelLayout title={msg.data.titre} footer="full">
+<style is:global>
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .res { max-width: 620px; margin: 0 auto; padding: var(--space-10) var(--space-5); text-align: center; }
+  .mark { width: 72px; height: 72px; border-radius: 50%; background: var(--accent-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--space-6); box-shadow: 0 8px 24px -8px rgba(245,158,11,0.5); }
+  .mark svg { width: 34px; height: 34px; }
+  .res h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--violet); }
+  @media (min-width: 480px) { .res { padding: var(--space-12) var(--space-7); } .res h1 { font-size: var(--text-3xl); } }
+  .status-badge { display: inline-flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); padding: 6px 14px; border-radius: 999px; background: var(--accent-100); color: var(--accent-700); font-size: var(--text-sm); font-weight: 700; }
+  .status-badge .d { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-500); }
+  .res-lead { margin-top: var(--space-5); font-size: var(--text-md); color: var(--text-secondary); text-wrap: pretty; }
+  .res-lead strong { color: var(--text-primary); font-weight: 600; }
+
+  /* RIB rappel */
+  .rib { margin-top: var(--space-8); background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; text-align: left; }
+  .rib-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--sand-25); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-tertiary); }
+  .rib-head svg { color: var(--violet); }
+  .rib-head strong { color: var(--text-secondary); font-weight: 600; }
+  .rib-body { padding: var(--space-5) var(--space-6); }
+  .rib-row { display: flex; justify-content: space-between; gap: var(--space-5); padding: var(--space-4) 0; border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); }
+  .rib-row:last-child { border-bottom: 0; }
+  .rib-row .k { color: var(--text-tertiary); }
+  .rib-row .v { color: var(--text-primary); font-weight: 600; text-align: right; }
+  .rib-row .v.mono { font-family: var(--font-mono); font-weight: 500; }
+  .rib-row .v.big { font-family: var(--font-mono); font-size: var(--text-md); color: var(--violet); }
+
+  /* Étapes */
+  .next { margin-top: var(--space-9); text-align: left; }
+  .next-title { font-size: var(--text-md); font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-3); }
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step-row { display: flex; gap: var(--space-5); padding-bottom: var(--space-7); position: relative; }
+  .step-row:last-child { padding-bottom: 0; }
+  .step-row::before { content: ''; position: absolute; left: 17px; top: 36px; bottom: -4px; width: 2px; background: var(--sand-200); }
+  .step-row:last-child::before { display: none; }
+  .step-dot { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .step-dot--now { background: var(--accent-100); color: var(--accent-700); border: 1.5px solid var(--accent-500); }
+  .step-dot--soon { background: var(--surface-paper); color: var(--sand-500); border: 1.5px solid var(--border-strong); }
+  .step-body { padding-top: 2px; }
+  .step-name { font-size: var(--text-base); font-weight: 600; color: var(--text-primary); }
+  .step-desc { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 2px; }
+
+  .actions { margin-top: var(--space-9); display: flex; flex-direction: column; gap: var(--space-4); }
+  .note { margin-top: var(--space-7); font-size: var(--text-xs); color: var(--text-tertiary); }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-hourglass" viewBox="0 0 256 256"><path d="M200,75.64V40a16,16,0,0,0-16-16H72A16,16,0,0,0,56,40V75.64a16,16,0,0,0,6.13,12.6L114.18,128,62.13,167.76A16,16,0,0,0,56,180.36V216a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V180.36a16,16,0,0,0-6.13-12.6L141.82,128l52.05-39.76A16,16,0,0,0,200,75.64ZM72,40H184V75.64l-.16.12L128,118.06,72.16,75.76,72,75.64ZM184,216H72V180.36l.16-.12L128,137.94l55.84,42.3.16.12Z"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 256 256"><path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,40.65,201.57,88H54.43Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 256 256"><path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0ZM82.34,114.34,120,76.69V168a8,8,0,0,0,16,0V76.69l37.66,37.65a8,8,0,0,0,11.32-11.32l-50.34-50.34a8,8,0,0,0-11.32,0L71,103a8,8,0,0,0,11.32,11.32Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 256 256"><path d="M42.76,50.78A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.36,0,27.27-4.34,41.49-16.78A8,8,0,0,0,232,177V64a8,8,0,0,0-13.27-6C187.94,84.69,165.66,73.66,139.55,60.74,112.66,47.43,82.21,32.37,42.76,50.78Z"/></symbol>
+</svg>
+
+<main class="res" id="main">
+  <span class="mark"><svg><use href="#i-hourglass"/></svg></span>
+  <h1>{msg.data.titre}</h1>
+  <span class="status-badge"><span class="d"></span>Soumission provisoire (SOP)</span>
+  <p class="res-lead">{msg.data.corps}</p>
+
+  <div class="rib">
+    <div class="rib-head"><svg class="ico-sm"><use href="#i-bank"/></svg><strong>À régler — <span id="sop-amt">…</span></strong></div>
+    <div class="rib-body">
+      <div class="rib-row"><span class="k">Banque</span><span class="v" id="sop-banque">—</span></div>
+      <div class="rib-row"><span class="k">Titulaire</span><span class="v" id="sop-titulaire">—</span></div>
+      <div class="rib-row"><span class="k">IBAN</span><span class="v mono" id="sop-iban">—</span></div>
+      <div class="rib-row"><span class="k">BIC / SWIFT</span><span class="v mono" id="sop-bic">—</span></div>
+      <div class="rib-row"><span class="k">Référence à rappeler</span><span class="v big" id="sop-ref">—</span></div>
+    </div>
+  </div>
+
+  <section class="next">
+    <h2 class="next-title"><svg class="ico-lg c-gold"><use href="#i-hourglass"/></svg>Et maintenant&nbsp;?</h2>
+    <div class="steps">
+      <div class="step-row">
+        <span class="step-dot step-dot--now"><svg class="ico"><use href="#i-bank"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Réglez les frais</span>
+          <span class="step-desc">Sur place au guichet, ou par virement, en rappelant la référence <strong id="sop-ref2">—</strong>.</span>
+        </span>
+      </div>
+      <div class="step-row">
+        <span class="step-dot step-dot--soon"><svg class="ico"><use href="#i-check"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Confirmation par l'Administratif</span>
+          <span class="step-desc">À réception, le paiement est validé et votre candidature passe de provisoire à soumise.</span>
+        </span>
+      </div>
+      <div class="step-row">
+        <span class="step-dot step-dot--soon"><svg class="ico"><use href="#i-search"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Étude de votre dossier</span>
+          <span class="step-desc">Réponse sous 5 à 10 jours ouvrés une fois la candidature soumise.</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <a href="/suivi" class="em-btn em-btn--primary em-btn--lg em-btn--block">Suivre mon dossier<svg class="ico"><use href="#i-caretright"/></svg></a>
+  </div>
+
+  <p class="note">Les instructions détaillées et le RIB officiel (PDF) viennent de vous être envoyés par e-mail. Tant que le paiement n'est pas confirmé, votre dossier reste en soumission provisoire et n'est pas étudié.</p>
+</main>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+/* LOT F (F9) — références et montant RÉELS (plus de valeurs de maquette). */
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  var id = AT.getDossierId() || '—';
+  document.getElementById('sop-ref').textContent = id;
+  document.getElementById('sop-ref2').textContent = id;
+  AT.api.getFrais(AT.readCtx().session ? { session: AT.readCtx().session } : {}, function (res) {
+    if (res.ok && res.data && res.data.frais1) {
+      document.getElementById('sop-amt').textContent = AT.fmtXOF(res.data.frais1.montant_xof) + ' FCFA';
+    } else {
+      document.getElementById('sop-amt').textContent = 'frais de dossier';
+    }
+    /* LOT RIB-SETTINGS : coordonnées SERVEUR — mêmes valeurs que le mail (même source). */
+    var rib = res.ok && res.data && res.data.rib;
+    if (rib) {
+      document.getElementById('sop-banque').textContent = rib.banque;
+      document.getElementById('sop-titulaire').textContent = rib.titulaire;
+      document.getElementById('sop-iban').textContent = rib.iban;
+      document.getElementById('sop-bic').textContent = rib.bic;
+    }
+  });
+})();
+</script>
+
+</TunnelLayout>

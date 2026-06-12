@@ -1,0 +1,13 @@
+eyebrow: "Candidature \xB7 rentr\xE9e 2026"
+titre: "Bourses d'\xE9tudes"
+description: "R\xE9duisez vos frais de scolarit\xE9. Les bourses se cumulent, dans la limite d'un plafond."
+points:
+  - icon: i-check
+    titre: "S'additionnent"
+    detail: "Les taux s'additionnent entre cat\xE9gories."
+  - icon: i-shield
+    titre: "Plafonn\xE9es \xE0 50\u00A0%"
+    detail: "De r\xE9duction, au total."
+  - icon: i-info
+    titre: "Une seule par cat\xE9gorie"
+    detail: "La plus forte est retenue."

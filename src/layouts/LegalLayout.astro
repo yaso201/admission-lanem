@@ -1,0 +1,128 @@
+---
+/**
+ * LegalLayout.astro — Gabarit des pages légales
+ * ---------------------------------------------
+ * Header (public) + colonne de lecture long-format (.prose-legal) + Footer riche.
+ * PAS de barre de progression ni de barre d'action : ces pages sont hors tunnel.
+ *
+ * Le design system n'ayant pas de style « prose », on le définit ici en
+ * is:global (le HTML vient du rendu Markdown, donc non scopable autrement).
+ */
+import '@emela/design-system/index.css';
+import '@emela/design-system/palette-ext.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title: string;
+  dateEffet?: string;
+  version?: string;
+}
+const { title, dateEffet, version } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>{title} — LaNEM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap"
+      />
+    </noscript>
+  </head>
+  <body>
+    <Header />
+
+    <main class="legal">
+      <div class="legal-wrap">
+        <a class="legal-back" href="/">
+          <svg viewBox="0 0 256 256" aria-hidden="true" width="16" height="16"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path></svg>
+          Retour à l'accueil
+        </a>
+
+        <header class="legal-head">
+          <span class="legal-eyebrow">Informations légales</span>
+          <h1 class="legal-title">{title}</h1>
+          {(dateEffet || version) && (
+            <p class="legal-meta">
+              {dateEffet && <span>En vigueur au {dateEffet}</span>}
+              {dateEffet && version && <span class="dot" aria-hidden="true">·</span>}
+              {version && <span>Version {version}</span>}
+            </p>
+          )}
+        </header>
+
+        <article class="prose-legal">
+          <slot />
+        </article>
+      </div>
+    </main>
+
+    <Footer />
+  </body>
+</html>
+
+<style>
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; margin: 0; }
+  .legal { max-width: 1120px; margin: 0 auto; padding: var(--space-10) var(--space-8) var(--space-13); }
+  .legal-wrap { max-width: 720px; margin: 0 auto; }
+
+  .legal-back { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-secondary); text-decoration: none; margin-bottom: var(--space-8); transition: color var(--duration-fast) var(--ease-out); }
+  .legal-back svg { fill: currentColor; }
+  .legal-back:hover { color: var(--violet); }
+
+  .legal-eyebrow { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--violet); }
+  .legal-title { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink-900); margin: var(--space-4) 0 0; }
+  .legal-meta { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); font-size: var(--text-sm); color: var(--text-tertiary); }
+  .legal-meta .dot { color: var(--text-tertiary); }
+  .legal-head { padding-bottom: var(--space-7); margin-bottom: var(--space-8); border-bottom: 1px solid var(--border-default); }
+
+  @media (max-width: 600px) {
+    .legal { padding: var(--space-8) var(--space-5) var(--space-11); }
+    .legal-title { font-size: var(--text-2xl); }
+  }
+</style>
+
+<style is:global>
+  /* ── .prose-legal — typographie long-format (rendu Markdown) ── */
+  .prose-legal { color: var(--text-secondary); font-size: var(--text-md); line-height: var(--leading-relaxed); }
+  .prose-legal > :first-child { margin-top: 0; }
+  .prose-legal > :last-child { margin-bottom: 0; }
+
+  .prose-legal h2 { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.01em; line-height: var(--leading-snug); color: var(--ink-900); margin: var(--space-10) 0 var(--space-5); }
+  .prose-legal h3 { font-size: var(--text-lg); font-weight: 600; color: var(--text-primary); margin: var(--space-8) 0 var(--space-4); }
+  .prose-legal h4 { font-size: var(--text-md); font-weight: 600; color: var(--text-primary); margin: var(--space-7) 0 var(--space-3); }
+
+  .prose-legal p { margin: 0 0 var(--space-5); text-wrap: pretty; }
+  .prose-legal a { color: var(--text-link); text-decoration: underline; text-underline-offset: 3px; }
+  .prose-legal a:hover { color: var(--text-link-hover); }
+  .prose-legal strong { color: var(--text-primary); font-weight: 600; }
+
+  .prose-legal ul, .prose-legal ol { margin: 0 0 var(--space-5); padding-left: var(--space-7); }
+  .prose-legal li { margin-bottom: var(--space-3); }
+  .prose-legal li::marker { color: var(--violet); }
+
+  .prose-legal hr { height: 1px; background: var(--border-default); border: 0; margin: var(--space-9) 0; }
+
+  .prose-legal blockquote { margin: var(--space-6) 0; padding: var(--space-4) var(--space-6); border-left: 3px solid var(--violet); background: var(--violet-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--text-primary); }
+  .prose-legal blockquote p:last-child { margin-bottom: 0; }
+
+  .prose-legal table { width: 100%; border-collapse: collapse; margin: 0 0 var(--space-6); font-size: var(--text-sm); }
+  .prose-legal th, .prose-legal td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-subtle); }
+  .prose-legal th { font-weight: 600; color: var(--text-primary); background: var(--sand-50); }
+
+  .prose-legal code { font-family: var(--font-mono); font-size: 0.9em; background: var(--sand-100); padding: 2px 6px; border-radius: var(--radius-xs); color: var(--text-primary); }
+</style>

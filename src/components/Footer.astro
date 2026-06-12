@@ -1,0 +1,129 @@
+---
+/**
+ * Footer.astro — Pied de page riche admission LaNEM (Direction A)
+ * ---------------------------------------------------------------
+ * Identité LaNEM + slogan · contacts cliquables · adresse ·
+ * informations légales · copyright.
+ *
+ * À utiliser sur les pages SANS barre d'action collante :
+ * pages terminales (confirmation, suivi, paiement-*) et pages légales.
+ * Sur les étapes du tunnel, préférer <FooterLegalStrip /> (voir README).
+ *
+ * Toutes les données viennent de src/config/ecole.ts.
+ */
+import { ecole } from '../config/ecole';
+const { identity, contact, legalLinks } = ecole;
+const year = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="ftr-inner">
+    <div class="ftr-top">
+
+      <div class="ftr-brand">
+        <div class="ftr-brand-mark"><span class="ftr-logo">LaNEM<span class="dot">.</span></span></div>
+        <div class="ftr-fullname">La Nouvelle École des Métiers</div>
+        <div class="ftr-subtitle">{identity.subtitle}</div>
+        <div class="ftr-slogan">{identity.slogan}</div>
+      </div>
+
+      <div class="ftr-col">
+        <div class="ftr-col-title">Nous contacter</div>
+        <div class="ftr-list">
+          <a class="ftr-link" href={`mailto:${contact.email}`}>
+            <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"></path></svg>{contact.email}
+          </a>
+          <a class="ftr-link" href={`mailto:${contact.admissionsEmail}`}>
+            <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"></path></svg>{contact.admissionsEmail}
+          </a>
+          <a class="ftr-link" href={contact.phoneHref}>
+            <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M222.37,158.46l-47.11-21.11-.13-.06a16,16,0,0,0-15.17,1.4,8.12,8.12,0,0,0-.75.56L134.87,160c-15.42-7.49-31.34-23.29-38.83-38.51l20.78-24.71c.2-.25.39-.5.57-.77a16,16,0,0,0,1.32-15.06l0-.12L97.54,33.64a16,16,0,0,0-16.62-9.52A56.26,56.26,0,0,0,32,80c0,79.4,64.6,144,144,144a56.26,56.26,0,0,0,55.88-48.92A16,16,0,0,0,222.37,158.46Z"></path></svg>{contact.phone}
+          </a>
+          <a class="ftr-link" href={contact.whatsapp} target="_blank" rel="noopener">
+            <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M187.58,144.84l-32-16a8,8,0,0,0-8,.5l-14.69,9.8a40.55,40.55,0,0,1-16-16l9.8-14.69a8,8,0,0,0,.5-8l-16-32A8,8,0,0,0,104,64a40,40,0,0,0-40,40,88.1,88.1,0,0,0,88,88,40,40,0,0,0,40-40A8,8,0,0,0,187.58,144.84ZM152,176a72.08,72.08,0,0,1-72-72A24,24,0,0,1,99.29,80.46l11.48,23L101,118a8,8,0,0,0-.73,7.51,56.47,56.47,0,0,0,30.15,30.15A8,8,0,0,0,138,155l14.61-9.74,23,11.48A24,24,0,0,1,152,176ZM128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-6.54-.67L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"></path></svg>WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div class="ftr-col">
+        <div class="ftr-col-title">Nous trouver</div>
+        <div class="ftr-addr">
+          <div class="ftr-addr-row">
+            <svg class="ico-sm" viewBox="0 0 256 256" aria-hidden="true"><path d="M128,16a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.21,144.53,209,128,222ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z"></path></svg>
+            <span>{contact.address}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ftr-col">
+        <div class="ftr-col-title">Informations légales</div>
+        <nav class="ftr-list" aria-label="Informations légales">
+          {legalLinks.map((l) => (
+            <a class="ftr-link ftr-legal-link" href={`/legal/${l.slug}`}>
+              <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path></svg>{l.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+
+    </div>
+
+    <div class="ftr-bottom">
+      <div class="ftr-copy">© {year} {identity.fullName}. Tous droits réservés.</div>
+      <div class="ftr-place">
+        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M128,16a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.21,144.53,209,128,222ZM128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Z"></path></svg>{contact.addressShort}
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ftr { background: var(--violet); color: #fff; }
+  .ftr svg { fill: currentColor; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ftr-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-11) var(--space-8) var(--space-9); }
+
+  .ftr-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: var(--space-9); align-items: start; }
+
+  /* Bloc marque */
+  .ftr-brand-mark { display: flex; align-items: baseline; gap: 2px; }
+  .ftr-logo { font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.03em; color: #fff; line-height: 1; }
+  .ftr-logo .dot { color: var(--gold); }
+  .ftr-fullname { margin-top: var(--space-5); font-size: var(--text-base); font-weight: 600; color: #fff; line-height: var(--leading-snug); }
+  .ftr-subtitle { margin-top: var(--space-3); font-size: var(--text-sm); color: rgba(255, 255, 255, 0.66); line-height: var(--leading-normal); max-width: 30ch; }
+  .ftr-slogan { margin-top: var(--space-7); display: inline-flex; align-items: center; gap: var(--space-3); font-family: var(--font-display); font-size: var(--text-md); font-weight: 700; font-style: italic; letter-spacing: -0.01em; color: var(--gold); }
+  .ftr-slogan::before { content: ''; width: 22px; height: 2px; background: var(--gold); border-radius: 2px; }
+
+  /* Colonnes */
+  .ftr-col-title { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.7); margin-bottom: var(--space-5); }
+  .ftr-list { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  .ftr-link { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: rgba(255, 255, 255, 0.82); text-decoration: none; line-height: var(--leading-snug); transition: color var(--duration-fast) var(--ease-out); width: fit-content; }
+  .ftr-link svg { color: var(--gold); opacity: 0.9; }
+  .ftr-link:hover { color: #fff; }
+  .ftr-link:hover svg { opacity: 1; }
+
+  .ftr-legal-link { color: rgba(255, 255, 255, 0.78); }
+  .ftr-legal-link svg { width: 13px; height: 13px; color: rgba(255, 255, 255, 0.4); }
+  .ftr-legal-link:hover svg { color: var(--gold); }
+
+  .ftr-addr { font-size: var(--text-sm); color: rgba(255, 255, 255, 0.82); line-height: var(--leading-relaxed); text-wrap: pretty; max-width: 26ch; }
+  .ftr-addr-row { display: flex; gap: var(--space-3); align-items: flex-start; }
+  .ftr-addr svg { color: var(--gold); margin-top: 2px; flex-shrink: 0; }
+
+  /* Barre bas */
+  .ftr-bottom { margin-top: var(--space-9); padding-top: var(--space-6); border-top: 1px solid rgba(255, 255, 255, 0.14); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; }
+  .ftr-copy { font-size: var(--text-xs); color: rgba(255, 255, 255, 0.55); }
+  .ftr-place { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-xs); color: rgba(255, 255, 255, 0.55); }
+  .ftr-place svg { width: 14px; height: 14px; color: rgba(255, 255, 255, 0.4); }
+
+  @media (max-width: 920px) {
+    .ftr-top { grid-template-columns: 1fr 1fr; gap: var(--space-8) var(--space-7); }
+    .ftr-brand { grid-column: 1 / -1; }
+  }
+  @media (max-width: 560px) {
+    .ftr-inner { padding: var(--space-9) var(--space-6) var(--space-7); }
+    .ftr-top { grid-template-columns: 1fr; gap: var(--space-8); }
+    .ftr-bottom { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+  }
+</style>

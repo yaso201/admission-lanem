@@ -1,0 +1,373 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const etape = await getEntry('etapes', 'recapitulatif');
+---
+<TunnelLayout title="Candidature — Récapitulatif · Étape 4">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  /* Progress */
+  .progress-strip { background: var(--surface-paper); border-bottom: 1px solid var(--border-subtle); }
+  .progress-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-6); }
+  .progress-label { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+  .progress-label .num { font-family: var(--font-mono); color: var(--violet); }
+  .progress-seg { display: flex; gap: var(--space-3); flex: 1; max-width: 420px; }
+  .seg { height: 5px; flex: 1; border-radius: 999px; background: var(--sand-200); }
+  .seg.is-done { background: var(--violet); }
+  .seg.is-current { background: var(--violet); }
+  .progress-steps-text { font-size: var(--text-sm); color: var(--text-tertiary); white-space: nowrap; display: none; }
+
+  /* Layout */
+  .tunnel { max-width: 1120px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: grid; grid-template-columns: 1fr; gap: var(--space-8); align-items: start; }
+
+  /* Anchor */
+  .lede { position: static; background: var(--violet); color: #fff; border-radius: var(--radius-xl); padding: var(--space-8) var(--space-7); }
+  .lede-eyebrow { display: block; margin-bottom: var(--space-4); color: var(--gold); }
+  .lede h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.08; color: #fff; }
+  .lede p { margin-top: var(--space-5); font-size: var(--text-md); color: rgba(255,255,255,0.80); text-wrap: pretty; }
+  .lede-points { margin-top: var(--space-7); display: flex; flex-direction: column; gap: var(--space-5); padding-top: var(--space-6); border-top: 1px solid rgba(255,255,255,0.16); }
+  .lede-point { display: flex; gap: var(--space-4); align-items: flex-start; font-size: var(--text-sm); color: rgba(255,255,255,0.74); }
+  .lede-point svg { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+  .lede-point strong { color: #fff; font-weight: 600; display: block; }
+
+  /* Review cards */
+  .review-stack { display: flex; flex-direction: column; gap: var(--space-5); }
+  .review-card { border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-paper); overflow: hidden; }
+  .review-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-subtle); background: var(--sand-25); }
+  .review-head-title { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-base); font-weight: 600; color: var(--text-primary); }
+  .review-head-title .hn { width: 22px; height: 22px; border-radius: 50%; background: var(--violet); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; flex-shrink: 0; }
+  .review-edit { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); font-weight: 600; color: var(--text-link); }
+  .review-edit:hover { color: var(--text-link-hover); }
+  .review-body { padding: var(--space-6); }
+
+  /* Key-value rows */
+  .kv { display: grid; grid-template-columns: 1fr; gap: var(--space-2) 0; }
+  .kv dt:not(:first-child) { margin-top: var(--space-4); }
+  .kv dt { font-size: var(--text-sm); color: var(--text-tertiary); }
+  .kv dd { font-size: var(--text-sm); color: var(--text-primary); font-weight: 500; margin: 0; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .kv dd .sub { color: var(--text-tertiary); font-weight: 400; }
+
+  /* Documents checklist */
+  .doc-check { display: flex; flex-direction: column; gap: var(--space-4); }
+  .doc-check-row { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-primary); }
+  .doc-check-row .ck { width: 22px; height: 22px; border-radius: 50%; background: var(--lagoon-soft); color: var(--lagoon-deep); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .doc-check-row.is-empty .ck { background: var(--sand-100); color: var(--sand-500); }
+  .doc-check-row .dcr-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .doc-check-row .nm { font-weight: 600; color: var(--text-primary); }
+  .doc-check-row.is-empty .nm { font-weight: 400; color: var(--text-tertiary); }
+  .doc-check-row .fn { font-size: var(--text-xs); color: var(--text-tertiary); font-family: var(--font-mono); }
+
+  /* Attestation */
+  .attest { border: 1.5px solid var(--violet); background: var(--violet-soft); border-radius: var(--radius-lg); padding: var(--space-6); display: flex; gap: var(--space-4); align-items: flex-start; margin-top: var(--space-5); }
+  /* M1 : zone de tap ≥44px — le <label class="attest"> englobant assure la zone.
+     On ajoute cursor:pointer + padding suffisant pour que la zone autour
+     de la checkbox soit ≥44px de hauteur tactile. Le label entier est cliquable. */
+  .attest .em-check-input { margin-top: 2px; cursor: pointer; }
+  .attest { cursor: pointer; min-height: var(--touch-min); }
+  .attest-text { font-size: var(--text-sm); color: var(--text-primary); line-height: var(--leading-normal); }
+  .attest-text strong { font-weight: 600; }
+  .attest-text .note { display: block; margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-secondary); }
+
+  /* Action bar */
+  .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
+  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .ab-left { display: flex; align-items: center; gap: var(--space-5); min-width: 0; }
+  .ab-ok { font-size: var(--text-sm); color: var(--lagoon-deep); font-weight: 600; display: none; align-items: center; gap: var(--space-3); }
+  .ab-ok svg { color: var(--lagoon); flex-shrink: 0; }
+  .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1; }
+  .ab-right .em-btn--lg { flex: 1; }
+
+  /* Palette overrides */
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+  .em-badge--success { background: var(--lagoon-soft); color: var(--lagoon-deep); }
+  .em-badge--success .em-badge-dot { background: var(--lagoon); }
+  .em-check-input:checked { background-color: var(--violet); border-color: var(--violet); }
+
+  /* Callout candidature conditionnelle (ACO) */
+  .rc-aco { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); background: var(--accent-50); border: 1px solid var(--accent-200); border-radius: var(--radius-lg); }
+  .rc-aco[hidden] { display: none; }
+  .rc-aco svg { color: var(--ochre); flex-shrink: 0; margin-top: 1px; }
+  .rc-aco-title { font-size: var(--text-sm); font-weight: 700; color: var(--clay-deep); }
+  .rc-aco-text { font-size: var(--text-xs); color: var(--clay-deep); margin-top: 2px; line-height: var(--leading-normal); }
+  .em-badge[hidden] { display: none !important; }
+
+  /* Bandeau frais → prochaine étape paiement */
+  .rc-fee { margin-top: var(--space-5); display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); background: var(--violet-soft); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); }
+  .rc-fee svg { color: var(--violet); flex-shrink: 0; }
+  .rc-fee-body { flex: 1; min-width: 0; }
+  .rc-fee-label { font-size: var(--text-sm); color: var(--text-secondary); }
+  .rc-fee-label strong { color: var(--text-primary); font-weight: 600; }
+  .rc-fee-amt { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: var(--violet); white-space: nowrap; }
+
+  /* ---- Breakpoint 480px ---- */
+  @media (min-width: 480px) {
+    .progress-steps-text { display: block; }
+    .progress-inner { padding: var(--space-4) var(--space-8); }
+    .action-bar-inner { padding: var(--space-5) var(--space-8); gap: var(--space-5); }
+    .ab-right { flex: initial; }
+    .ab-right .em-btn--lg { flex: initial; }
+    .kv { grid-template-columns: 190px 1fr; gap: var(--space-4) var(--space-6); }
+    .kv dt:not(:first-child) { margin-top: 0; }
+  }
+
+  /* ---- Breakpoint 768px ---- */
+  @media (min-width: 768px) {
+    .tunnel { grid-template-columns: 340px 1fr; gap: var(--space-11); padding: var(--space-10) var(--space-8); }
+    .lede { position: sticky; top: 120px; padding: var(--space-9) var(--space-8); }
+    .lede h1 { font-size: var(--text-3xl); }
+    .ab-ok { display: inline-flex; }
+  }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-checkcircle" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm49.53,85.79-58.54,56a8,8,0,0,1-11,0L78.47,141.79a8,8,0,1,1,11-11.62L114,153.83l52.54-50.26a8,8,0,0,1,11,11.62Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-caretleft" viewBox="0 0 256 256"><path d="M173.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L99.31,128Z"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 256 256"><path d="M227.31,73.37,182.63,28.69a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.69,147.31,64l24-24L216,84.69Z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm-8,144a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v32A8,8,0,0,1,120,168ZM124,84a12,12,0,1,1,12,12A12,12,0,0,1,124,84Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm56,112H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48a8,8,0,0,1,0,16Z"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol>
+  <symbol id="i-edit2" viewBox="0 0 256 256"><path d="M227.32,73.37,182.63,28.69a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.32,96A16,16,0,0,0,227.32,73.37Z"/></symbol>
+</svg>
+
+<div class="progress-strip">
+  <div class="progress-inner">
+    <span class="progress-label"><span class="num">4</span> / 4 — Récapitulatif</span>
+    <div class="progress-seg" role="progressbar" aria-valuenow="4" aria-valuemin="0" aria-valuemax="4" aria-label="Étape 4 sur 4 : Récapitulatif">
+      <span class="seg is-done"></span>
+      <span class="seg is-done"></span>
+      <span class="seg is-done"></span>
+      <span class="seg is-current"></span>
+    </div>
+    <span class="progress-steps-text">Dernière étape avant l'envoi</span>
+  </div>
+</div>
+
+<main class="tunnel" id="main">
+  <!-- Anchor -->
+  <aside class="lede">
+    <span class="t-overline lede-eyebrow">{etape.data.eyebrow}</span>
+    <h1>{etape.data.titre}</h1>
+    <p>{etape.data.description}</p>
+    <div class="lede-points">
+      {etape.data.points.map(pt => (
+        <div class="lede-point">
+          <svg class="ico-lg"><use href={`#${pt.icon}`}/></svg>
+          <span><strong>{pt.titre}</strong>{pt.detail}</span>
+        </div>
+      ))}
+    </div>
+  </aside>
+
+  <!-- Review column -->
+  <div>
+    <div class="review-stack">
+
+      <!-- Formation -->
+      <div class="review-card">
+        <div class="review-head">
+          <span class="review-head-title"><span class="hn">1</span>Formation</span>
+          <a href="#" class="review-edit" id="edit-formation"><svg class="ico-sm"><use href="#i-pencil"/></svg>Modifier</a>
+        </div>
+        <div class="review-body">
+          <dl class="kv">
+            <dt>Programme</dt>
+            <dd id="rc-programme">—</dd>
+            <dt>Niveau</dt>
+            <dd id="rc-niveau">—</dd>
+            <dt>Session</dt>
+            <dd id="rc-session">—</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Identité -->
+      <div class="review-card">
+        <div class="review-head">
+          <span class="review-head-title"><span class="hn">2</span>Identité</span>
+          <a href="#" class="review-edit" id="edit-identite"><svg class="ico-sm"><use href="#i-pencil"/></svg>Modifier</a>
+        </div>
+        <div class="review-body">
+          <dl class="kv">
+            <dt>Prénom &amp; nom</dt>
+            <dd id="rc-nom">—</dd>
+            <dt>Email</dt>
+            <dd><span id="rc-email">—</span> <span class="em-badge em-badge--success em-badge--sm"><svg class="ico-sm ico-12"><use href="#i-check"/></svg>Vérifié</span></dd>
+            <dt>Téléphone</dt>
+            <dd><span id="rc-tel">—</span> <span class="em-badge em-badge--sm">Contact</span></dd>
+            <dt>Session du Bac</dt>
+            <dd id="rc-bacdate">—</dd>
+            <dt>Profil de candidature</dt>
+            <dd id="rc-profil">—</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Pièces -->
+      <div class="review-card">
+        <div class="review-head">
+          <span class="review-head-title"><span class="hn">3</span>Pièces justificatives</span>
+          <a href="#" class="review-edit" id="edit-pieces"><svg class="ico-sm"><use href="#i-pencil"/></svg>Modifier</a>
+        </div>
+        <div class="review-body">
+          <div class="doc-check" id="rc-pieces"></div>
+        </div>
+      </div>
+
+      <!-- Callout candidature conditionnelle -->
+      <div class="rc-aco" id="rc-aco" hidden>
+        <svg class="ico-lg"><use href="#i-info"/></svg>
+        <span>
+          <span class="rc-aco-title">Candidature sous réserve d'obtention du Bac</span>
+          <span class="rc-aco-text">Votre profil est « Bac en attente ». En cas d'admission, elle sera conditionnelle (ACO) jusqu'à la remise de votre diplôme via le complément de dossier.</span>
+        </span>
+      </div>
+
+      <!-- Attestation -->
+      <label class="attest">
+        <input type="checkbox" class="em-check-input" id="attest-check" />
+        <span class="attest-text">
+          <strong>Je certifie sur l'honneur l'exactitude des informations fournies.</strong>
+          <span class="note">Toute déclaration inexacte peut entraîner le rejet de la candidature.</span>
+        </span>
+      </label>
+
+      <!-- Frais → prochaine étape -->
+      <div class="rc-fee">
+        <svg class="ico-lg"><use href="#i-clock"/></svg>
+        <span class="rc-fee-body">
+          <span class="rc-fee-label"><strong>Prochaine étape : paiement des frais de candidature.</strong> La soumission de votre dossier est effective dès le paiement validé.</span>
+        </span>
+        <span class="rc-fee-amt" id="rc-fee-amt">—</span>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <div class="ab-left">
+      <a class="em-btn em-btn--ghost" href="/pieces" id="back-recap"><svg class="ico"><use href="#i-caretleft"/></svg>Retour</a>
+      <span class="ab-ok"><svg class="ico-sm"><use href="#i-checkcircle"/></svg>Candidature complète</span>
+    </div>
+    <div class="ab-right">
+      <a class="em-btn em-btn--primary em-btn--lg" id="cta-recap" href="/paiement">Passer au paiement<svg class="ico"><use href="#i-caretright"/></svg></a>
+    </div>
+  </div>
+</div>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline src="/scripts/admission-profil.js"></script>
+<script is:inline>
+/* LOT F (F5) — récapitulatif RÉEL : tout vient de get_dossier (identité, programme,
+   pièces, montant frais 1). Rendu DOM sûr (textContent). */
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  document.getElementById('back-recap').href = AT.buildUrl('/pieces');
+  document.getElementById('edit-formation').href = AT.buildUrl('/');
+  document.getElementById('edit-identite').href = AT.buildUrl('/identite');
+  document.getElementById('edit-pieces').href = AT.buildUrl('/pieces');
+  AT.onTokenExpired = function () { AT.navigateTo('/reprise'); };
+
+  var cta = document.getElementById('cta-recap');
+  var attest = document.getElementById('attest-check');
+  function refreshCta() {
+    if (attest.checked) {
+      cta.href = AT.buildUrl('/paiement');
+      cta.removeAttribute('aria-disabled');
+      cta.style.pointerEvents = '';
+      cta.style.opacity = '';
+    } else {
+      cta.removeAttribute('href');
+      cta.setAttribute('aria-disabled', 'true');
+      cta.style.pointerEvents = 'none';
+      cta.style.opacity = '0.55';
+    }
+  }
+  attest.addEventListener('change', refreshCta);
+  refreshCta();
+
+  function setText(id, value) { document.getElementById(id).textContent = value || '—'; }
+
+  var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var PROFIL_LABELS = { bac_anterieur: 'Bac antérieur', bac_annee: 'Bac de l’année', bac_attente: 'Bac en attente' };
+
+  if (!AT.getDossierId() || !AT.getDossierToken()) {
+    window.location.href = '/reprise';
+    return;
+  }
+  AT.api.getDossier(function (res) {
+    if (!res.ok) {
+      if (res.error && res.error.code === 'OTP_RESENT') { AT.navigateTo('/reprise'); }
+      return;
+    }
+    var d = res.data;
+    setText('rc-programme', d.programme && d.programme.label);
+    setText('rc-niveau', d.programme && d.programme.level && d.programme.level.name);
+    setText('rc-session', d.session && (d.session.label + (d.session.academic_year ? ' — ' + d.session.academic_year : '')));
+    setText('rc-nom', (d.identite.prenom || '') + ' ' + (d.identite.nom || ''));
+    setText('rc-email', d.identite.email);
+    setText('rc-tel', d.identite.tel);
+    if (d.identite.date_bac) {
+      var parts = String(d.identite.date_bac).split('-');
+      var bacTxt = parts[1] ? (MOIS[parseInt(parts[1], 10) - 1] + ' ' + parts[0]) : parts[0];
+      setText('rc-bacdate', bacTxt.charAt(0).toUpperCase() + bacTxt.slice(1));
+    }
+    var profEl = document.getElementById('rc-profil');
+    profEl.textContent = (PROFIL_LABELS[d.profil_bac] || d.profil_bac || '—') + ' ';
+    if (d.conditionnel) {
+      var b = document.createElement('span');
+      b.className = 'em-badge em-badge--sm';
+      b.style.background = '#FBEBD8'; b.style.color = 'var(--accent-900)';
+      b.textContent = 'Conditionnelle';
+      profEl.appendChild(b);
+    }
+    document.getElementById('rc-aco').hidden = !d.conditionnel;
+
+    /* Pièces : état RÉEL du dossier */
+    var wrap = document.getElementById('rc-pieces');
+    wrap.textContent = '';
+    (d.pieces || []).forEach(function (p) {
+      var deposee = p.statut === 'deposee';
+      var row = document.createElement('div');
+      row.className = 'doc-check-row' + (deposee ? '' : ' is-empty');
+      var ck = document.createElement('span'); ck.className = 'ck';
+      if (deposee) {
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'ico-sm ico-xs');
+        var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', '#i-check');
+        svg.appendChild(use); ck.appendChild(svg);
+      }
+      row.appendChild(ck);
+      var body = document.createElement('span'); body.className = 'dcr-body';
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = p.label;
+      var fn = document.createElement('span'); fn.className = 'fn';
+      fn.textContent = deposee ? 'Fournie' : (p.requise ? 'Manquante — requise' : 'Optionnelle · non fournie');
+      body.appendChild(nm); body.appendChild(fn);
+      row.appendChild(body);
+      wrap.appendChild(row);
+    });
+
+    /* Montant frais 1 : AFFICHAGE du montant back (aucun calcul front) */
+    var f1 = d.paiement && d.paiement.frais1;
+    if (f1 && f1.montant_xof != null) {
+      document.getElementById('rc-fee-amt').textContent = AT.fmtXOF(f1.montant_xof) + ' FCFA';
+    }
+  });
+})();
+</script>
+
+</TunnelLayout>

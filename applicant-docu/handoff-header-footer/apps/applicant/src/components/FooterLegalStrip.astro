@@ -1,0 +1,45 @@
+---
+/**
+ * FooterLegalStrip.astro — Ruban légal minimal
+ * --------------------------------------------
+ * Version sobre du footer, pour les pages OÙ le footer riche gênerait :
+ * les étapes du tunnel qui portent une barre d'action collante.
+ * Satisfait l'obligation d'accès aux mentions légales sans casser le flow.
+ *
+ * ⚠️ Interaction avec la barre d'action `.action-bar` (position: fixed) :
+ * voir README → « Barre d'action collante ». Recommandation : passer
+ * `.action-bar` en `position: sticky` pour que ce ruban reste visible
+ * en bas de page.
+ */
+import { ecole } from '../config/ecole';
+const { identity, legalLinks } = ecole;
+const year = new Date().getFullYear();
+---
+
+<footer class="fls">
+  <div class="fls-inner">
+    <span class="fls-copy">© {year} {identity.name}</span>
+    <nav class="fls-links" aria-label="Informations légales">
+      {legalLinks.map((l, i) => (
+        <Fragment>
+          {i > 0 && <span class="fls-sep" aria-hidden="true">·</span>}
+          <a href={`/legal/${l.slug}`}>{l.label}</a>
+        </Fragment>
+      ))}
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .fls { background: var(--surface-paper); border-top: 1px solid var(--border-subtle); }
+  .fls-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-5) var(--space-8); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4) var(--space-6); flex-wrap: wrap; }
+  .fls-copy { font-size: var(--text-xs); color: var(--text-tertiary); white-space: nowrap; }
+  .fls-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); }
+  .fls-links a { font-size: var(--text-xs); color: var(--text-secondary); text-decoration: none; transition: color var(--duration-fast) var(--ease-out); }
+  .fls-links a:hover { color: var(--violet); text-decoration: underline; text-underline-offset: 3px; }
+  .fls-sep { color: var(--sand-300); font-size: var(--text-xs); }
+
+  @media (max-width: 560px) {
+    .fls-inner { padding: var(--space-5) var(--space-5); flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+  }
+</style>

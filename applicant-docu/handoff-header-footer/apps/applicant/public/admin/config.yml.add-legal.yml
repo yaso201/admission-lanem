@@ -1,0 +1,28 @@
+# =============================================================
+# À AJOUTER dans apps/applicant/public/admin/config.yml
+# -------------------------------------------------------------
+# Coller ce bloc à la fin de la liste `collections:` existante
+# (au même niveau d'indentation que `etapes`, `messages`, `aide`).
+#
+# Le juriste édite alors les 4 textes directement dans Sveltia
+# (Markdown + preview). Les modifs passent par une PR sur la
+# branche `content` → review → merge, comme les autres collections.
+# Conforme DEC-210 : contenu éditorial uniquement.
+# =============================================================
+
+  # --- Pages légales (Markdown) ---
+  - name: legal
+    label: "Pages légales"
+    label_singular: "Page légale"
+    folder: apps/applicant/src/content/legal
+    format: frontmatter
+    extension: md
+    create: false          # 4 pages fixes — pas de création libre
+    delete: false
+    slug: "{{slug}}"
+    identifier_field: titre
+    fields:
+      - { name: titre, label: "Titre de la page", widget: string }
+      - { name: date_effet, label: "Date d'effet", widget: string, required: false, hint: "Ex : 1er septembre 2026" }
+      - { name: version, label: "Version", widget: string, required: false, hint: "Ex : V1.0" }
+      - { name: body, label: "Contenu juridique", widget: markdown }

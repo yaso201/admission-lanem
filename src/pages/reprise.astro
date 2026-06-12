@@ -1,0 +1,233 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+---
+<TunnelLayout title="Reprendre ma candidature — LaNEM">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .wrap { max-width: 560px; margin: 0 auto; padding: var(--space-10) var(--space-5) var(--space-12); }
+  .card { background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: var(--space-8) var(--space-7); }
+  .card + .card { margin-top: var(--space-6); }
+  .card h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); }
+  .card .sub { margin-top: var(--space-4); font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
+  .blk { margin-top: var(--space-7); }
+  .blk[hidden] { display: none; }
+
+  .otp-digits { display: flex; gap: var(--space-3); margin: var(--space-5) 0; }
+  .otp-digit {
+    width: 44px; height: 52px; text-align: center;
+    font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);
+    border: 1.5px solid var(--border-default); border-radius: var(--radius-sm); background: var(--surface-paper);
+  }
+  .otp-digit.is-filled { border-color: var(--violet); }
+  .otp-actions { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+  .otp-resend-link { appearance: none; border: 0; background: none; cursor: pointer; font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 600; color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; padding: 0; }
+  .otp-resend-wait { font-size: var(--text-sm); color: var(--text-tertiary); }
+  .otp-resend-wait .t { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-secondary); }
+  .msg { margin-top: var(--space-4); font-size: var(--text-sm); }
+  .msg.is-error { color: var(--terra, #B3261E); }
+  .msg.is-ok { color: var(--lagoon-deep); }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+  .dossier-pill { display: inline-flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); padding: var(--space-3) var(--space-4); background: var(--violet-soft); color: var(--violet); border-radius: var(--radius-full); font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700; }
+
+  .recover-row { display: flex; gap: var(--space-4); margin-top: var(--space-5); flex-wrap: wrap; }
+  .recover-row .em-input { flex: 1; min-width: 220px; }
+</style>
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol>
+</svg>
+
+<main class="wrap" id="main">
+  <!-- Mode A : arrivée par lien tokenisé (mails) — OTP à l'arrivée (double barrière A0.2) -->
+  <div class="card" id="card-otp" hidden>
+    <h1>Reprendre ma candidature</h1>
+    <p class="sub">Pour protéger votre dossier, saisissez le code de vérification à 6 chiffres
+      que nous venons d'envoyer à votre adresse e-mail.</p>
+    <span class="dossier-pill" id="dossier-pill">—</span>
+    <div class="blk">
+      <div class="otp-digits" role="group" aria-label="Code de vérification à 6 chiffres">
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 1" />
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 2" />
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 3" />
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 4" />
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 5" />
+        <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 6" />
+      </div>
+      <div class="otp-actions">
+        <button type="button" class="em-btn em-btn--primary" id="btn-verify">Vérifier et reprendre</button>
+        <span class="otp-resend-wait" id="resend-wait" hidden>Renvoyer le code dans <span class="t" id="resend-timer">1:00</span></span>
+        <button type="button" class="otp-resend-link" id="btn-resend" hidden>Renvoyer le code</button>
+      </div>
+      <div class="msg" id="otp-msg" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- Mode B : « retrouver mon dossier » par e-mail (recover_dossier, anti-énumération) -->
+  <div class="card" id="card-recover" hidden>
+    <h1>Retrouver mon dossier</h1>
+    <p class="sub">Indiquez l'adresse e-mail utilisée pour votre candidature. Si un dossier actif
+      lui correspond, vous recevrez un lien de reprise par e-mail.</p>
+    <div class="recover-row">
+      <input class="em-input" id="recover-email" type="email" inputmode="email" autocomplete="email" placeholder="votre@email.com" />
+      <button type="button" class="em-btn em-btn--primary" id="btn-recover">Recevoir le lien</button>
+    </div>
+    <div class="msg" id="recover-msg" role="status" aria-live="polite"></div>
+  </div>
+</main>
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  var digits = Array.prototype.slice.call(document.querySelectorAll('.otp-digit'));
+  var cardOtp = document.getElementById('card-otp');
+  var cardRecover = document.getElementById('card-recover');
+  var otpMsg = document.getElementById('otp-msg');
+  var resendWait = document.getElementById('resend-wait');
+  var resendTimer = document.getElementById('resend-timer');
+  var btnResend = document.getElementById('btn-resend');
+
+  function msg(el2, kind, text) {
+    el2.className = 'msg' + (kind ? ' is-' + kind : '');
+    el2.textContent = text || '';
+  }
+
+  /* ---- Saisie code (auto-avance + collage) ---- */
+  digits.forEach(function (el, i) {
+    el.addEventListener('input', function () {
+      el.value = el.value.replace(/[^0-9]/g, '').slice(0, 1);
+      el.classList.toggle('is-filled', !!el.value);
+      if (el.value && i < digits.length - 1) { digits[i + 1].focus(); }
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        e.preventDefault();
+        digits[i - 1].value = '';
+        digits[i - 1].classList.remove('is-filled');
+        digits[i - 1].focus();
+      }
+    });
+    el.addEventListener('paste', function (e) {
+      var text = (e.clipboardData || window.clipboardData).getData('text') || '';
+      var nums = text.replace(/[^0-9]/g, '').slice(0, digits.length);
+      if (nums.length > 1) {
+        e.preventDefault();
+        digits.forEach(function (d, j) {
+          d.value = nums[j] || '';
+          d.classList.toggle('is-filled', !!d.value);
+        });
+        digits[Math.min(nums.length, digits.length - 1)].focus();
+      }
+    });
+  });
+
+  var tick = null;
+  function startTimer(seconds) {
+    var left = seconds;
+    resendWait.hidden = false;
+    btnResend.hidden = true;
+    clearInterval(tick);
+    resendTimer.textContent = Math.floor(left / 60) + ':' + (left % 60 < 10 ? '0' : '') + (left % 60);
+    tick = setInterval(function () {
+      left -= 1;
+      resendTimer.textContent = Math.floor(left / 60) + ':' + (left % 60 < 10 ? '0' : '') + (left % 60);
+      if (left <= 0) {
+        clearInterval(tick);
+        resendWait.hidden = true;
+        btnResend.hidden = false;
+      }
+    }, 1000);
+  }
+
+  function sendCode() {
+    AT.api.requestOtp(function (res) {
+      if (res.ok) {
+        msg(otpMsg, 'ok', 'Code envoyé à votre adresse e-mail.');
+        startTimer(60);
+      } else {
+        msg(otpMsg, 'error', (res.error && res.error.message) || 'Envoi du code impossible. Réessayez.');
+        resendWait.hidden = true;
+        btnResend.hidden = false;
+      }
+    });
+  }
+  btnResend.addEventListener('click', function () { msg(otpMsg, '', ''); sendCode(); });
+
+  /* Après vérification : router selon l'état réel du dossier. */
+  function routeByStatus() {
+    AT.api.getDossier(function (res) {
+      if (!res.ok) { AT.navigateTo('/suivi'); return; }
+      var statut = res.data.statut;
+      if (statut === 'BRO') {
+        var pending = (res.data.pieces || []).some(function (p) { return p.requise && p.statut !== 'deposee'; });
+        window.location.href = pending ? '/pieces' : '/recapitulatif';
+      } else {
+        window.location.href = '/suivi';
+      }
+    });
+  }
+
+  document.getElementById('btn-verify').addEventListener('click', function () {
+    var code = digits.map(function (d) { return d.value; }).join('');
+    if (code.length !== 6) { msg(otpMsg, 'error', 'Saisissez les 6 chiffres du code.'); return; }
+    msg(otpMsg, '', 'Vérification…');
+    AT.api.verifyOtp('email', code, function (res) {
+      if (res.ok) {
+        msg(otpMsg, 'ok', 'Vérifié. Reprise de votre dossier…');
+        routeByStatus();
+      } else if (res.error && res.error.code === 'OTP_EXPIRED') {
+        msg(otpMsg, 'error', 'Code expiré. Demandez un nouveau code.');
+        resendWait.hidden = true;
+        btnResend.hidden = false;
+      } else {
+        msg(otpMsg, 'error', (res.error && res.error.message) || 'Code invalide. Réessayez.');
+        digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
+        digits[0].focus();
+      }
+    });
+  });
+
+  /* ---- Mode B : recovery par e-mail ---- */
+  var recoverMsg = document.getElementById('recover-msg');
+  document.getElementById('btn-recover').addEventListener('click', function () {
+    var email = document.getElementById('recover-email').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg(recoverMsg, 'error', 'Adresse e-mail invalide.');
+      return;
+    }
+    msg(recoverMsg, '', 'Envoi…');
+    AT.api.recoverDossier(email, function (res) {
+      /* Réponse UNIFORME du back (anti-énumération) — on relaie son message tel quel. */
+      if (res.ok) { msg(recoverMsg, 'ok', (res.data && res.data.message) || 'Si un dossier actif correspond, un lien vient d’être envoyé.'); }
+      else { msg(recoverMsg, 'error', (res.error && res.error.message) || 'Demande impossible pour le moment. Réessayez plus tard.'); }
+    });
+  });
+
+  /* ---- Aiguillage : lien tokenisé (mode A) ou recherche (mode B) ---- */
+  var adopted = AT.adoptFromUrl();
+  if (adopted || (AT.getDossierId() && AT.getDossierToken())) {
+    cardOtp.hidden = false;
+    document.getElementById('dossier-pill').textContent = AT.getDossierId();
+    if (adopted) { sendCode(); } else {
+      resendWait.hidden = true;
+      btnResend.hidden = false;
+      msg(otpMsg, '', 'Demandez un code pour reprendre votre dossier.');
+    }
+    if (digits[0]) { digits[0].focus(); }
+  } else {
+    cardRecover.hidden = false;
+  }
+})();
+</script>
+
+</TunnelLayout>

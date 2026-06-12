@@ -1,0 +1,104 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const msg = await getEntry('messages', 'paiement-ok');
+---
+<TunnelLayout title={msg.data.titre} footer="full">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .res { max-width: 600px; margin: 0 auto; padding: var(--space-10) var(--space-5); text-align: center; }
+  .mark { width: 72px; height: 72px; border-radius: 50%; background: var(--lagoon); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--space-6); box-shadow: 0 8px 24px -8px rgba(14,124,134,0.5); }
+  .mark svg { width: 36px; height: 36px; }
+  .res h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--violet); }
+  @media (min-width: 480px) { .res { padding: var(--space-12) var(--space-7); } .res h1 { font-size: var(--text-3xl); } }
+  .res-lead { margin-top: var(--space-4); font-size: var(--text-md); color: var(--text-secondary); text-wrap: pretty; }
+
+  .receipt { margin-top: var(--space-8); background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; text-align: left; }
+  .receipt-amt { padding: var(--space-7); text-align: center; border-bottom: 1px solid var(--border-subtle); }
+  .receipt-amt .lbl { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
+  .receipt-amt .val { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; margin-top: var(--space-3); }
+  .receipt-amt .val .cur { font-size: var(--text-md); color: var(--text-tertiary); font-weight: 600; margin-left: var(--space-2); }
+  .receipt-rows { padding: var(--space-6) var(--space-7); display: flex; flex-direction: column; gap: var(--space-4); }
+  .rrow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); font-size: var(--text-sm); }
+  .rrow .k { color: var(--text-tertiary); }
+  .rrow .v { color: var(--text-primary); font-weight: 600; text-align: right; white-space: nowrap; }
+  .rrow .v.mono { font-family: var(--font-mono); font-weight: 500; }
+
+  .nextline { margin-top: var(--space-7); display: flex; gap: var(--space-4); padding: var(--space-5) var(--space-6); background: var(--clay-soft); border: 1px solid #F4DFC8; border-radius: var(--radius-md); text-align: left; align-items: flex-start; }
+  .nextline svg { color: var(--clay); flex-shrink: 0; margin-top: 1px; }
+  .nextline p { font-size: var(--text-sm); color: var(--clay-deep); }
+  .nextline strong { font-weight: 700; }
+
+  .actions { margin-top: var(--space-8); display: flex; flex-direction: column; gap: var(--space-4); }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 256 256"><path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0ZM82.34,114.34,120,76.69V168a8,8,0,0,0,16,0V76.69l37.66,37.65a8,8,0,0,0,11.32-11.32l-50.34-50.34a8,8,0,0,0-11.32,0L71,103a8,8,0,0,0,11.32,11.32Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+</svg>
+
+<main class="res" id="main">
+  <span class="mark"><svg><use href="#i-check"/></svg></span>
+  <h1>{msg.data.titre}</h1>
+  <p class="res-lead">{msg.data.corps}</p>
+
+  <div class="receipt">
+    <div class="receipt-amt">
+      <div class="lbl">Montant réglé</div>
+      <div class="val"><span id="ok-amt">…</span><span class="cur">FCFA</span></div>
+    </div>
+    <div class="receipt-rows">
+      <div class="rrow"><span class="k">Dossier</span><span class="v mono" id="ok-ref">—</span></div>
+      <div class="rrow"><span class="k">Canal</span><span class="v">En ligne — KkiaPay</span></div>
+      <div class="rrow"><span class="k">Reçu officiel</span><span class="v">Envoyé par e-mail (PDF)</span></div>
+    </div>
+    <div class="receipt-rows">
+      <div class="rrow"><span class="k">Référence de transaction</span><span class="v mono">KKP-7F3A-91C2</span></div>
+      <div class="rrow"><span class="k">Confirmé par</span><span class="v">KkiaPay</span></div>
+      <div class="rrow"><span class="k">Dossier</span><span class="v mono">CAN-2026-04821</span></div>
+      <div class="rrow"><span class="k">Moyen</span><span class="v">MTN MoMo · +229 ····56</span></div>
+      <div class="rrow"><span class="k">Date</span><span class="v">6 juin 2026 · 14:38</span></div>
+    </div>
+  </div>
+
+  <div class="nextline">
+    <svg class="ico-lg"><use href="#i-search"/></svg>
+    <p><strong>Et maintenant ?</strong> Votre dossier est en cours d'étude. Vous recevrez une réponse sous 5 à 10 jours ouvrés, et votre reçu officiel vient d'être envoyé à votre adresse e-mail.</p>
+  </div>
+
+  <div class="actions">
+    <a href="/suivi" class="em-btn em-btn--primary em-btn--lg em-btn--block">Suivre mon dossier<svg class="ico"><use href="#i-caretright"/></svg></a>
+  </div>
+</main>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+/* LOT F (F9) — référence et montant RÉELS. */
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  document.getElementById('ok-ref').textContent = AT.getDossierId() || '—';
+  AT.api.getFrais(AT.readCtx().session ? { session: AT.readCtx().session } : {}, function (res) {
+    if (res.ok && res.data && res.data.frais1) {
+      document.getElementById('ok-amt').textContent = AT.fmtXOF(res.data.frais1.montant_xof);
+    } else {
+      document.getElementById('ok-amt').textContent = '—';
+    }
+  });
+})();
+</script>
+
+</TunnelLayout>

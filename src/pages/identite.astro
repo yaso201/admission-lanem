@@ -1,0 +1,653 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const etape = await getEntry('etapes', 'identite');
+---
+<TunnelLayout title="Candidature — Identité & vérification · Étape 2">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  /* Progress */
+  .progress-strip { background: var(--surface-paper); border-bottom: 1px solid var(--border-subtle); }
+  .progress-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-6); }
+  .progress-label { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+  .progress-label .num { font-family: var(--font-mono); color: var(--violet); }
+  .progress-seg { display: flex; gap: var(--space-3); flex: 1; max-width: 420px; }
+  .seg { height: 5px; flex: 1; border-radius: 999px; background: var(--sand-200); }
+  .seg.is-done { background: var(--violet); }
+  .seg.is-current { background: var(--violet); }
+  .progress-steps-text { font-size: var(--text-sm); color: var(--text-tertiary); white-space: nowrap; display: none; }
+
+  /* Layout */
+  .tunnel { max-width: 1120px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: grid; grid-template-columns: 1fr; gap: var(--space-8); align-items: start; }
+
+  /* Anchor block */
+  .lede { position: static; background: var(--violet); color: #fff; border-radius: var(--radius-xl); padding: var(--space-8) var(--space-7); }
+  .lede-eyebrow { display: block; margin-bottom: var(--space-4); color: var(--gold); }
+  .lede h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.08; color: #fff; }
+  .lede p { margin-top: var(--space-5); font-size: var(--text-md); color: rgba(255,255,255,0.80); text-wrap: pretty; }
+  .lede-points { margin-top: var(--space-7); display: flex; flex-direction: column; gap: var(--space-5); padding-top: var(--space-6); border-top: 1px solid rgba(255,255,255,0.16); }
+  .lede-point { display: flex; gap: var(--space-4); align-items: flex-start; font-size: var(--text-sm); color: rgba(255,255,255,0.74); }
+  .lede-point svg { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+  .lede-point strong { color: #fff; font-weight: 600; display: block; }
+
+  /* Section heads */
+  .sec { margin-bottom: var(--space-9); }
+  .sec:last-child { margin-bottom: 0; }
+  .sec-kicker { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
+  .sec-kicker .n { width: 20px; height: 20px; border-radius: 50%; background: var(--violet); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; }
+
+  /* Fields grid */
+  .field-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+  .field-grid .col-full { grid-column: 1 / -1; }
+
+  /* OTP block */
+  .otp-stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .otp-channel { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); overflow: hidden; }
+  .otp-head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-6); }
+  .otp-ic { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .otp-ic--done { background: var(--lagoon-soft); color: var(--lagoon-deep); }
+  .otp-ic--active { background: var(--violet-soft); color: var(--violet); }
+  .otp-head-body { flex: 1; min-width: 0; }
+  .otp-channel-label { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
+  .otp-dest { font-size: var(--text-base); font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .otp-body { padding: 0 var(--space-6) var(--space-6); border-top: 1px solid var(--border-subtle); padding-top: var(--space-5); }
+  .otp-body[hidden] { display: none; }
+  .otp-instr { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-5); }
+  .otp-digits { display: flex; gap: var(--space-3); margin-bottom: var(--space-5); }
+  .otp-digit {
+    width: 44px; height: 52px; text-align: center;
+    font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);
+    border: 1.5px solid var(--border-default); border-radius: var(--radius-sm); background: var(--surface-paper);
+    transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  }
+  .otp-digit.is-filled { border-color: var(--violet); }
+  .otp-digit.is-cursor { border-color: var(--violet); box-shadow: var(--shadow-focus); }
+  .otp-actions { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+  .otp-resend { font-size: var(--text-sm); color: var(--text-tertiary); display: inline-flex; align-items: center; gap: var(--space-2); }
+  .otp-resend .t { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-secondary); }
+  .otp-resend-link { appearance: none; border: 0; background: none; cursor: pointer; font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 600; color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; padding: 0; }
+  .otp-msg { margin-top: var(--space-4); font-size: var(--text-sm); }
+  .otp-msg.is-error { color: var(--terra, #B3261E); }
+  .otp-msg.is-ok { color: var(--lagoon-deep); }
+
+  /* Consentements */
+  .consent-box { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+  .consent-row { display: flex; gap: var(--space-4); align-items: flex-start; font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
+  .consent-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: var(--violet); }
+  .consent-row a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* Erreur formulaire */
+  .form-msg { margin-top: var(--space-5); font-size: var(--text-sm); }
+  .form-msg.is-error { color: var(--terra, #B3261E); }
+
+  /* Action bar */
+  .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
+  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .ab-left { display: flex; align-items: center; gap: var(--space-5); min-width: 0; }
+  .ab-gate { font-size: var(--text-sm); color: var(--text-secondary); display: none; align-items: center; gap: var(--space-3); }
+  .ab-gate svg { color: var(--violet); flex-shrink: 0; }
+  .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1; }
+  .ab-right .em-btn--lg { flex: 1; }
+
+  /* CTA or + overrides palette */
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+  .em-btn--primary[disabled] { background: var(--gold); color: var(--gold-ink); }
+  .em-badge--success { background: var(--lagoon-soft); color: var(--lagoon-deep); }
+  .em-badge--success .em-badge-dot { background: var(--lagoon); }
+  .em-badge--warning { background: #FBEBD8; color: var(--accent-900); }
+
+  /* Bloc baccalauréat + profil calculé (DEC-214) */
+  .bac-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+
+  .bac-result { margin-top: var(--space-5); border: 1.5px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-paper); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+  .bac-result[hidden] { display: none; }
+  .bac-result.is-conditionnel { border-color: var(--gold); background: var(--accent-50); }
+  .bac-result-top { display: flex; align-items: center; gap: var(--space-4); }
+  .bac-result-ic { width: 38px; height: 38px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--violet-soft); color: var(--violet); }
+  .bac-result.is-conditionnel .bac-result-ic { background: #FBEBD8; color: var(--ochre); }
+  .bac-result-head { flex: 1; min-width: 0; }
+  .bac-result-kicker { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
+  .bac-result-label { font-size: var(--text-md); font-weight: 700; color: var(--text-primary); margin-top: 1px; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .em-badge[hidden] { display: none !important; }
+  .bac-result-resume { font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
+  .bac-result-conseq { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-sm); color: var(--text-primary); line-height: var(--leading-normal); padding-top: var(--space-4); border-top: 1px solid var(--border-subtle); }
+  .bac-result.is-conditionnel .bac-result-conseq { border-top-color: #F1DDBF; }
+  .bac-result-conseq svg { flex-shrink: 0; margin-top: 2px; color: var(--violet); }
+  .bac-result.is-conditionnel .bac-result-conseq svg { color: var(--ochre); }
+  .bac-result-pieces { font-size: var(--text-xs); color: var(--text-tertiary); display: flex; align-items: center; gap: var(--space-3); }
+  .bac-result-pieces svg { color: var(--text-tertiary); flex-shrink: 0; }
+
+  /* ---- Media queries mobile-first ---- */
+  @media (min-width: 480px) {
+    .progress-steps-text { display: block; }
+    .progress-inner { padding: var(--space-4) var(--space-8); }
+    .action-bar-inner { padding: var(--space-5) var(--space-8); gap: var(--space-5); }
+    .ab-right { flex: initial; }
+    .ab-right .em-btn--lg { flex: initial; }
+    .field-grid { grid-template-columns: 1fr 1fr; }
+    .otp-digit { width: 48px; height: 56px; font-size: var(--text-xl); }
+  }
+
+  @media (min-width: 768px) {
+    .tunnel { grid-template-columns: 340px 1fr; gap: var(--space-11); padding: var(--space-10) var(--space-8); }
+    .lede { position: sticky; top: 120px; padding: var(--space-9) var(--space-8); }
+    .lede h1 { font-size: var(--text-3xl); }
+    .ab-gate { display: inline-flex; }
+  }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-checkcircle" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm49.53,85.79-58.54,56a8,8,0,0,1-11,0L78.47,141.79a8,8,0,1,1,11-11.62L114,153.83l52.54-50.26a8,8,0,0,1,11,11.62Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-caretleft" viewBox="0 0 256 256"><path d="M173.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L99.31,128Z"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 256 256"><path d="M222.37,158.46l-47.11-21.11-.13-.06a16,16,0,0,0-15.17,1.4,8.12,8.12,0,0,0-.75.56L134.87,160c-15.42-7.49-31.34-23.29-38.83-38.51l20.78-24.71c.2-.25.39-.5.57-.77a16,16,0,0,0,1.32-15.06l0-.12L97.54,33.64a16,16,0,0,0-16.62-9.52A56.26,56.26,0,0,0,32,80c0,79.4,64.6,144,144,144a56.26,56.26,0,0,0,55.88-48.92A16,16,0,0,0,222.37,158.46Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 256 256"><path d="M208,40H48A16,16,0,0,0,32,56v58.78c0,89.61,75.82,119.34,91,124.39a15.53,15.53,0,0,0,10,0c15.2-5.05,91-34.78,91-124.39V56A16,16,0,0,0,208,40Zm-34.34,69.66-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L120,140.69l42.34-42.35a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-info" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm-8,144a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v32A8,8,0,0,1,120,168ZM124,84a12,12,0,1,1,12,12A12,12,0,0,1,124,84Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 256 256"><path d="M208,80H172V52a44,44,0,0,0-88,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM100,52a28,28,0,0,1,56,0V80H100Zm28,128a16,16,0,1,1,16-16A16,16,0,0,1,128,180Z"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 256 256"><path d="M251.76,88.94l-120-64a8,8,0,0,0-7.52,0l-120,64a8,8,0,0,0,0,14.12L32,117.87v48.42a15.91,15.91,0,0,0,4.06,10.65C49.16,191.53,78.51,216,128,216a130,130,0,0,0,48-8.76V240a8,8,0,0,0,16,0V199.51a115.63,115.63,0,0,0,27.94-22.57A15.91,15.91,0,0,0,224,166.29V117.87l27.76-14.81a8,8,0,0,0,0-14.12ZM128,200c-43.27,0-68.72-21.14-80-33.71V126.4l76.24,40.66a8,8,0,0,0,7.52,0L176,143.47v46.34C163.4,195.69,147.52,200,128,200Zm80-33.75a97.83,97.83,0,0,1-16,14.25V134.93l16-8.53ZM128,150.93,25,96,128,41.07,231,96Z"/></symbol>
+  <symbol id="i-files" viewBox="0 0 256 256"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z"/></symbol>
+</svg>
+
+<div class="progress-strip">
+  <div class="progress-inner">
+    <span class="progress-label"><span class="num">2</span> / 4 — Identité</span>
+    <div class="progress-seg" role="progressbar" aria-valuenow="2" aria-valuemin="0" aria-valuemax="4" aria-label="Étape 2 sur 4 : Identité">
+      <span class="seg is-done"></span>
+      <span class="seg is-current"></span>
+      <span class="seg"></span>
+      <span class="seg"></span>
+    </div>
+    <span class="progress-steps-text">Suivant&nbsp;: Pièces · Récapitulatif</span>
+  </div>
+</div>
+
+<main class="tunnel" id="main">
+  <!-- Anchor block -->
+  <aside class="lede">
+    <span class="t-overline lede-eyebrow">{etape.data.eyebrow}</span>
+    <h1>{etape.data.titre}</h1>
+    <p>{etape.data.description}</p>
+    <div class="lede-points">
+      {etape.data.points.map(pt => (
+        <div class="lede-point">
+          <svg class="ico-lg"><use href={`#${pt.icon}`}/></svg>
+          <span><strong>{pt.titre}</strong>{pt.detail}</span>
+        </div>
+      ))}
+    </div>
+  </aside>
+
+  <!-- Form column -->
+  <div>
+    <!-- Identity fields -->
+    <div class="sec">
+      <div class="sec-kicker"><span class="n">1</span>Votre identité</div>
+      <div class="field-grid">
+        <div class="em-field">
+          <label class="em-field-label" for="prenom">Prénom <span class="em-required" aria-hidden="true">*</span></label>
+          <input type="text" class="em-input" id="prenom" autocomplete="given-name" required />
+        </div>
+        <div class="em-field">
+          <label class="em-field-label" for="nom">Nom <span class="em-required" aria-hidden="true">*</span></label>
+          <input type="text" class="em-input" id="nom" autocomplete="family-name" required />
+        </div>
+        <div class="em-field col-full">
+          <label class="em-field-label" for="email">Email <span class="em-required" aria-hidden="true">*</span></label>
+          <input class="em-input" id="email" type="email" inputmode="email" autocomplete="email" required />
+          <span class="em-field-help">Le code de vérification et la décision d'admission seront envoyés à cette adresse.</span>
+        </div>
+        <div class="em-field col-full">
+          <label class="em-field-label" for="tel">Téléphone mobile <span class="em-required" aria-hidden="true">*</span></label>
+          <input class="em-input" id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+229…" required />
+          <span class="em-field-help">Utilisé par le service des admissions pour vous joindre (relances, contact).</span>
+        </div>
+        <div class="em-field col-full">
+          <label class="em-field-label" for="niveau">Niveau d'entrée <span class="em-required" aria-hidden="true">*</span></label>
+          <select class="em-input" id="niveau" required>
+            <option value="">Chargement des niveaux…</option>
+          </select>
+          <span class="em-field-help">Niveau auquel vous candidatez dans ce programme.</span>
+        </div>
+        <div class="em-field col-full">
+          <div class="bac-field-head">
+            <label class="em-field-label" for="datebac">Date d'obtention du Bac <span class="em-required" aria-hidden="true">*</span></label>
+          </div>
+          <input class="em-input" id="datebac" type="month" aria-describedby="bac-result" required />
+          <span class="em-field-help">Mois et année de votre session du baccalauréat. Votre profil — et les pièces à fournir — en découlent automatiquement.</span>
+        </div>
+      </div>
+
+      <!-- Profil calculé (DEC-214) — indicatif : le back fait foi à la création -->
+      <div class="bac-result" id="bac-result" aria-live="polite" hidden>
+        <div class="bac-result-top">
+          <span class="bac-result-ic" id="bac-ic"><svg class="ico-lg"><use href="#i-cap"/></svg></span>
+          <span class="bac-result-head">
+            <span class="bac-result-kicker">Profil de candidature</span>
+            <span class="bac-result-label"><span id="bac-label"></span><span class="em-badge" id="bac-badge" hidden></span></span>
+          </span>
+        </div>
+        <span class="bac-result-resume" id="bac-resume"></span>
+        <span class="bac-result-conseq"><svg class="ico-sm"><use href="#i-info"/></svg><span id="bac-conseq"></span></span>
+        <span class="bac-result-pieces"><svg class="ico-sm"><use href="#i-files"/></svg><span id="bac-pieces"></span></span>
+      </div>
+    </div>
+
+    <!-- Consentements (requis par le back : CONSENT_REQUIRED) -->
+    <div class="sec">
+      <div class="sec-kicker"><span class="n">2</span>Consentements</div>
+      <div class="consent-box">
+        <label class="consent-row">
+          <input type="checkbox" id="consent-dp" />
+          <span>J'accepte que mes données personnelles soient traitées dans le cadre de ma candidature, conformément à la <a href="/legal/politique-de-confidentialite" target="_blank" rel="noopener">politique de confidentialité</a>. <span class="em-required" aria-hidden="true">*</span></span>
+        </label>
+        <label class="consent-row">
+          <input type="checkbox" id="consent-cgv" />
+          <span>J'ai lu et j'accepte les <a href="/legal/cgv" target="_blank" rel="noopener">conditions générales</a> de candidature. <span class="em-required" aria-hidden="true">*</span></span>
+        </label>
+      </div>
+      <div class="form-msg" id="form-msg" role="alert" aria-live="polite"></div>
+    </div>
+
+    <!-- Vérification OTP (LOT F / A0.1 : le code est livré par E-MAIL) -->
+    <div class="sec">
+      <div class="sec-kicker"><span class="n">3</span>Vérification de votre adresse e-mail</div>
+      <div class="otp-stack">
+
+        <!-- Email — canal porteur du code -->
+        <div class="otp-channel">
+          <div class="otp-head">
+            <span class="otp-ic otp-ic--active"><svg class="ico-lg"><use href="#i-envelope"/></svg></span>
+            <span class="otp-head-body">
+              <span class="otp-channel-label">Adresse email</span>
+              <span class="otp-dest" id="otp-dest">—</span>
+            </span>
+            <span class="em-badge" id="otp-badge" hidden></span>
+          </div>
+          <div class="otp-body" id="otp-body" hidden>
+            <p class="otp-instr">Saisissez le code à 6 chiffres reçu par e-mail. Pensez à vérifier vos courriers indésirables.</p>
+            <div class="otp-digits" role="group" aria-label="Code de vérification à 6 chiffres">
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 1" />
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 2" />
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 3" />
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 4" />
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 5" />
+              <input type="text" class="otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 6" />
+            </div>
+            <div class="otp-actions">
+              <button type="button" class="em-btn em-btn--secondary" id="otp-verify">Vérifier le code</button>
+              <span class="otp-resend" id="otp-resend-wait" hidden><svg class="ico-sm"><use href="#i-info"/></svg>Renvoyer le code dans <span class="t" id="otp-timer">1:00</span></span>
+              <button type="button" class="otp-resend-link" id="otp-resend" hidden>Renvoyer le code</button>
+            </div>
+            <div class="otp-msg" id="otp-msg" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <!-- Téléphone — collecté pour le contact humain (A0.1), pas de code SMS -->
+        <div class="otp-channel">
+          <div class="otp-head">
+            <span class="otp-ic otp-ic--done"><svg class="ico-lg"><use href="#i-phone"/></svg></span>
+            <span class="otp-head-body">
+              <span class="otp-channel-label">Téléphone mobile</span>
+              <span class="otp-dest" id="tel-dest">—</span>
+            </span>
+            <span class="em-badge">Contact</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <div class="ab-left">
+      <a class="em-btn em-btn--ghost" id="back-identite" href="/"><svg class="ico"><use href="#i-caretleft"/></svg>Retour</a>
+      <span class="ab-gate" id="ab-gate"><svg class="ico-sm"><use href="#i-lock"/></svg><span id="ab-gate-text">Renseignez vos informations et consentements</span></span>
+    </div>
+    <div class="ab-right">
+      <button type="button" class="em-btn em-btn--primary em-btn--lg" id="cta-identite" disabled aria-disabled="true">Créer mon dossier<svg class="ico"><use href="#i-caretright"/></svg></button>
+    </div>
+  </div>
+</div>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline src="/scripts/admission-profil.js"></script>
+<script is:inline>
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  var AP = window.AdmissionProfil;
+  var ctx = AT.readCtx();
+
+  var el = {
+    prenom: document.getElementById('prenom'),
+    nom: document.getElementById('nom'),
+    email: document.getElementById('email'),
+    tel: document.getElementById('tel'),
+    niveau: document.getElementById('niveau'),
+    datebac: document.getElementById('datebac'),
+    consentDp: document.getElementById('consent-dp'),
+    consentCgv: document.getElementById('consent-cgv'),
+    formMsg: document.getElementById('form-msg'),
+    cta: document.getElementById('cta-identite'),
+    gateText: document.getElementById('ab-gate-text'),
+    back: document.getElementById('back-identite'),
+    otpDest: document.getElementById('otp-dest'),
+    telDest: document.getElementById('tel-dest'),
+    otpBadge: document.getElementById('otp-badge'),
+    otpBody: document.getElementById('otp-body'),
+    otpVerify: document.getElementById('otp-verify'),
+    otpResendWait: document.getElementById('otp-resend-wait'),
+    otpResend: document.getElementById('otp-resend'),
+    otpTimer: document.getElementById('otp-timer'),
+    otpMsg: document.getElementById('otp-msg')
+  };
+  var digits = Array.prototype.slice.call(document.querySelectorAll('.otp-digit'));
+
+  /* Retour dynamique */
+  el.back.href = AT.buildUrl(ctx.bourse === 'oui' ? '/bourses' : '/');
+
+  /* ---- Profil bac indicatif (DEC-214) — le back classifie à la création ---- */
+  var card = document.getElementById('bac-result');
+  function renderBac() {
+    var profil = AP.classer(el.datebac.value);
+    if (!profil) { card.hidden = true; return; }
+    card.hidden = false;
+    card.classList.toggle('is-conditionnel', !!profil.conditionnel);
+    document.getElementById('bac-label').textContent = profil.label;
+    var badge = document.getElementById('bac-badge');
+    if (profil.conditionnel) {
+      badge.hidden = false;
+      badge.className = 'em-badge em-badge--warning';
+      badge.textContent = 'Admission conditionnelle';
+    } else { badge.hidden = true; }
+    document.getElementById('bac-resume').textContent = profil.resume;
+    document.getElementById('bac-conseq').textContent = profil.consequence;
+    var req = AP.piecesPour(profil).filter(function (p) { return p.requis; }).length;
+    document.getElementById('bac-pieces').textContent =
+      req + ' pièce' + (req > 1 ? 's' : '') + ' obligatoire' + (req > 1 ? 's' : '') + ' pour ce profil — détail à l’étape Pièces.';
+    AP.save({ value: el.datebac.value, override: null, profil: profil.id });
+  }
+  el.datebac.addEventListener('input', function () { renderBac(); refreshGate(); });
+
+  /* ---- Niveau d'entrée : niveaux RÉELS du programme de la session ---- */
+  function setNiveauOptions(list, placeholder) {
+    /* Options construites en DOM (textContent) — données catalogue jamais injectées en HTML. */
+    el.niveau.textContent = '';
+    var first = document.createElement('option');
+    first.value = '';
+    first.textContent = placeholder;
+    el.niveau.appendChild(first);
+    (list || []).forEach(function (n) {
+      var opt = document.createElement('option');
+      opt.value = n.level_code;
+      opt.textContent = n.level_name;
+      el.niveau.appendChild(opt);
+    });
+  }
+  function loadNiveaux() {
+    AT.api.listSessions(null, function (resS) {
+      var sessions = (resS.ok && resS.data && resS.data.sessions) || [];
+      var current = null;
+      for (var i = 0; i < sessions.length; i++) {
+        if (sessions[i].id === ctx.session) { current = sessions[i]; break; }
+      }
+      if (!current) {
+        setNiveauOptions([], 'Session introuvable — repartez de l’accueil');
+        return;
+      }
+      AT.api.listProgrammes(function (resP) {
+        var progs = (resP.ok && resP.data && resP.data.programmes) || [];
+        var niveaux = [];
+        for (var j = 0; j < progs.length; j++) {
+          if (progs[j].code === current.programme.code) { niveaux = progs[j].niveaux || []; break; }
+        }
+        if (!niveaux.length) {
+          setNiveauOptions([], 'Aucun niveau disponible');
+          return;
+        }
+        setNiveauOptions(niveaux, 'Choisissez votre niveau…');
+        if (niveaux.length === 1) { el.niveau.value = niveaux[0].level_code; }
+        refreshGate();
+      });
+    });
+  }
+
+  /* ---- Validation + gate ---- */
+  function formValid() {
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.email.value.trim());
+    var telOk = (el.tel.value.replace(/[^0-9+]/g, '').length >= 8);
+    return el.prenom.value.trim() && el.nom.value.trim() && emailOk && telOk &&
+      el.niveau.value && el.datebac.value && el.consentDp.checked && el.consentCgv.checked;
+  }
+  var phase = 'form';
+  function refreshGate() {
+    if (phase !== 'form') { return; }
+    if (formValid()) {
+      el.cta.removeAttribute('disabled');
+      el.cta.setAttribute('aria-disabled', 'false');
+      el.gateText.textContent = 'Prêt — un code vous sera envoyé par e-mail';
+    } else {
+      el.cta.setAttribute('disabled', '');
+      el.cta.setAttribute('aria-disabled', 'true');
+      el.gateText.textContent = 'Renseignez vos informations et consentements';
+    }
+  }
+  ['input', 'change'].forEach(function (evt) {
+    [el.prenom, el.nom, el.email, el.tel, el.niveau, el.consentDp, el.consentCgv].forEach(function (f) {
+      f.addEventListener(evt, refreshGate);
+    });
+  });
+  el.email.addEventListener('input', function () { el.otpDest.textContent = el.email.value.trim() || '—'; });
+  el.tel.addEventListener('input', function () { el.telDest.textContent = el.tel.value.trim() || '—'; });
+
+  function showFormError(message) {
+    el.formMsg.className = 'form-msg is-error';
+    el.formMsg.textContent = message;
+  }
+
+  /* ---- Phase OTP ---- */
+  var resendLeft = 0, resendTick = null;
+  function startResendTimer(seconds) {
+    resendLeft = seconds;
+    el.otpResendWait.hidden = false;
+    el.otpResend.hidden = true;
+    clearInterval(resendTick);
+    resendTick = setInterval(function () {
+      resendLeft -= 1;
+      var m = Math.floor(resendLeft / 60), s = resendLeft % 60;
+      el.otpTimer.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      if (resendLeft <= 0) {
+        clearInterval(resendTick);
+        el.otpResendWait.hidden = true;
+        el.otpResend.hidden = false;
+      }
+    }, 1000);
+    el.otpTimer.textContent = Math.floor(seconds / 60) + ':' + (seconds % 60 < 10 ? '0' : '') + (seconds % 60);
+  }
+
+  function otpMessage(kind, text) {
+    el.otpMsg.className = 'otp-msg' + (kind ? ' is-' + kind : '');
+    el.otpMsg.textContent = text || '';
+  }
+
+  function enterOtpPhase(sent) {
+    phase = 'otp';
+    [el.prenom, el.nom, el.email, el.tel, el.niveau, el.datebac].forEach(function (f) { f.setAttribute('readonly', ''); });
+    el.niveau.setAttribute('disabled', '');
+    el.consentDp.setAttribute('disabled', '');
+    el.consentCgv.setAttribute('disabled', '');
+    el.otpBody.hidden = false;
+    el.otpBadge.hidden = false;
+    el.otpBadge.className = 'em-badge em-badge--warning';
+    el.otpBadge.textContent = sent ? 'Code envoyé' : 'En attente du code';
+    el.cta.setAttribute('disabled', '');
+    el.cta.setAttribute('aria-disabled', 'true');
+    el.cta.innerHTML = 'Saisissez le code reçu par e-mail';
+    el.gateText.textContent = 'Vérifiez votre e-mail pour continuer';
+    if (sent) { startResendTimer(60); }
+    else { el.otpResendWait.hidden = true; el.otpResend.hidden = false; }
+    if (digits[0]) { digits[0].focus(); }
+  }
+
+  function requestCode(cb) {
+    AT.api.requestOtp(function (res) {
+      if (res.ok) {
+        otpMessage('ok', 'Code envoyé à ' + el.otpDest.textContent + '.');
+        startResendTimer(60);
+      } else {
+        otpMessage('error', (res.error && res.error.message) || 'Envoi du code impossible. Réessayez.');
+        el.otpResendWait.hidden = true;
+        el.otpResend.hidden = false;
+      }
+      if (cb) { cb(res); }
+    });
+  }
+
+  el.otpResend.addEventListener('click', function () {
+    otpMessage('', '');
+    requestCode();
+  });
+
+  el.otpVerify.addEventListener('click', function () {
+    var code = digits.map(function (d) { return d.value; }).join('');
+    if (code.length !== 6) {
+      otpMessage('error', 'Saisissez les 6 chiffres du code.');
+      return;
+    }
+    el.otpVerify.setAttribute('disabled', '');
+    otpMessage('', 'Vérification…');
+    AT.api.verifyOtp('email', code, function (res) {
+      el.otpVerify.removeAttribute('disabled');
+      if (res.ok) {
+        otpMessage('ok', 'Adresse vérifiée. Redirection vers les pièces…');
+        el.otpBadge.className = 'em-badge em-badge--success';
+        el.otpBadge.textContent = 'Vérifié';
+        var profil = (AP.load() || {}).profil || '';
+        AT.navigateTo('/pieces', { profil: profil });
+      } else {
+        var codeErr = res.error && res.error.code;
+        if (codeErr === 'OTP_EXPIRED') {
+          otpMessage('error', 'Code expiré. Demandez un nouveau code ci-dessous.');
+          el.otpResendWait.hidden = true;
+          el.otpResend.hidden = false;
+        } else {
+          otpMessage('error', (res.error && res.error.message) || 'Code invalide. Vérifiez et réessayez.');
+        }
+        digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
+        if (digits[0]) { digits[0].focus(); }
+      }
+    });
+  });
+
+  /* ---- Création du dossier (F1 : payload RÉEL) ---- */
+  el.cta.addEventListener('click', function () {
+    if (phase !== 'form' || !formValid()) { return; }
+    el.cta.setAttribute('disabled', '');
+    el.cta.textContent = 'Création du dossier…';
+    el.formMsg.textContent = '';
+    var payload = {
+      session: ctx.session,
+      level_code: el.niveau.value,
+      identite: {
+        prenom: el.prenom.value.trim(),
+        nom: el.nom.value.trim(),
+        email: el.email.value.trim(),
+        tel: el.tel.value.trim(),
+        date_bac: el.datebac.value ? el.datebac.value + '-01' : null
+      },
+      consent_data_processing: el.consentDp.checked,
+      consent_cgv: el.consentCgv.checked,
+      bourses_demandees: ctx.bourses ? ctx.bourses.split(',').filter(Boolean) : []
+    };
+    AT.api.createDossier(payload, function (res) {
+      if (res.ok) {
+        requestCode(function () { enterOtpPhase(true); });
+      } else {
+        el.cta.removeAttribute('disabled');
+        el.cta.innerHTML = 'Réessayer<svg class="ico"><use href="#i-caretright"/></svg>';
+        showFormError((res.error && res.error.message) || 'Erreur lors de la création du dossier. Réessayez.');
+      }
+    });
+  });
+
+  /* ---- Reprise sur la page (dossier déjà créé dans cette session) ---- */
+  if (AT.getDossierId() && AT.getDossierToken()) {
+    el.otpDest.textContent = 'votre adresse e-mail';
+    enterOtpPhase(false);
+    otpMessage('', 'Un dossier est déjà en cours. Demandez un code pour continuer.');
+  } else {
+    loadNiveaux();
+  }
+  renderBac();
+  refreshGate();
+})();
+</script>
+
+<script is:inline>
+/* M4 — Auto-navigation OTP digits (avant + backspace) */
+(function () {
+  var digits = Array.prototype.slice.call(document.querySelectorAll('.otp-digit'));
+  if (!digits.length) return;
+
+  digits.forEach(function (el, i) {
+    el.addEventListener('input', function () {
+      el.value = el.value.replace(/[^0-9]/g, '').slice(0, 1);
+      if (el.value && i < digits.length - 1) {
+        digits[i + 1].focus();
+      }
+      /* Met à jour les classes visuelles */
+      digits.forEach(function (d) {
+        d.classList.toggle('is-filled', !!d.value);
+        d.classList.remove('is-cursor');
+      });
+      if (document.activeElement && document.activeElement.classList.contains('otp-digit')) {
+        document.activeElement.classList.add('is-cursor');
+      }
+    });
+
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !el.value && i > 0) {
+        e.preventDefault();
+        digits[i - 1].value = '';
+        digits[i - 1].focus();
+        digits[i - 1].classList.remove('is-filled');
+      }
+    });
+
+    el.addEventListener('focus', function () {
+      digits.forEach(function (d) { d.classList.remove('is-cursor'); });
+      el.classList.add('is-cursor');
+    });
+
+    /* Coller le code complet d'un coup */
+    el.addEventListener('paste', function (e) {
+      var text = (e.clipboardData || window.clipboardData).getData('text') || '';
+      var nums = text.replace(/[^0-9]/g, '').slice(0, digits.length);
+      if (nums.length > 1) {
+        e.preventDefault();
+        digits.forEach(function (d, j) {
+          d.value = nums[j] || '';
+          d.classList.toggle('is-filled', !!d.value);
+        });
+        var next = Math.min(nums.length, digits.length - 1);
+        digits[next].focus();
+      }
+    });
+  });
+})();
+</script>
+
+</TunnelLayout>

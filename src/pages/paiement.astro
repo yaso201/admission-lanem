@@ -1,0 +1,492 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const etape = await getEntry('etapes', 'paiement');
+---
+<TunnelLayout title="Candidature — Paiement des frais">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  /* Context strip */
+  .ctx-strip { background: var(--surface-paper); border-bottom: 1px solid var(--border-subtle); }
+  .ctx-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-secondary); }
+  .ctx-inner .ok { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--lagoon-deep); font-weight: 600; }
+  .ctx-inner .ok svg { color: var(--lagoon); }
+  .ctx-sep { color: var(--text-tertiary); }
+  .ctx-cur { color: var(--text-primary); font-weight: 600; }
+
+  .tunnel { max-width: 1120px; margin: 0 auto; padding: var(--space-8) var(--space-5); display: grid; grid-template-columns: 1fr; gap: var(--space-8); align-items: start; }
+
+  /* Anchor = order summary */
+  .lede { position: static; background: var(--violet); color: #fff; border-radius: var(--radius-xl); padding: var(--space-8) var(--space-7); }
+  .lede-eyebrow { display: block; margin-bottom: var(--space-4); color: var(--gold); }
+  .lede h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: #fff; }
+  .amount { font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.02em; color: #fff; margin-top: var(--space-3); line-height: 1; }
+  .amount .cur { font-size: var(--text-lg); font-weight: 600; color: rgba(255,255,255,0.7); margin-left: var(--space-3); }
+  .lede-line { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid rgba(255,255,255,0.16); display: flex; justify-content: space-between; font-size: var(--text-sm); color: rgba(255,255,255,0.82); }
+  .lede-line + .lede-line { margin-top: 0; padding-top: var(--space-4); border-top: 0; }
+  .lede-line .v { font-weight: 600; color: #fff; white-space: nowrap; }
+  .lede-points { margin-top: var(--space-7); padding-top: var(--space-6); border-top: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: var(--space-5); }
+  .lede-point { display: flex; gap: var(--space-4); align-items: flex-start; font-size: var(--text-sm); color: rgba(255,255,255,0.74); }
+  .lede-point svg { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+  .lede-point strong { color: #fff; font-weight: 600; display: block; }
+
+  /* Payment column */
+  .pay-head { font-size: var(--text-lg); font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-5); }
+
+  /* Method selector */
+  .methods { display: grid; grid-template-columns: 1fr; gap: var(--space-3); margin-bottom: var(--space-6); }
+  .method { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); border: 1.5px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); cursor: pointer; font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); }
+  .method svg { flex-shrink: 0; color: var(--sand-500); }
+  .method.is-active { border-color: var(--violet); background: var(--violet-soft); color: var(--violet); box-shadow: 0 0 0 1px var(--violet); }
+  .method.is-active svg { color: var(--violet); }
+
+  /* Secure zone (provider widget) */
+  .secure { border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-paper); overflow: hidden; }
+  .secure-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--sand-25); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-tertiary); }
+  .secure-head svg { color: var(--lagoon-deep); }
+  .secure-head strong { color: var(--text-secondary); font-weight: 600; }
+  .secure-head .prov { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-tertiary); }
+  .secure-body { padding: var(--space-7) var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+  .card-number-wrap { position: relative; }
+  .card-brands { position: absolute; right: var(--space-5); top: 50%; transform: translateY(-50%); display: flex; gap: var(--space-2); align-items: center; }
+  .brand-chip { font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: var(--sand-500); border: 1px solid var(--border-default); border-radius: 3px; padding: 2px 4px; background: var(--surface-paper); }
+  .field-2 { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+
+  /* Action bar */
+  .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
+  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .ab-secure { font-size: var(--text-xs); color: var(--text-tertiary); display: none; align-items: center; gap: var(--space-3); }
+  .ab-secure svg { color: var(--lagoon-deep); flex-shrink: 0; }
+  .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1; }
+  .ab-right .em-btn--lg { flex: 1; }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+  .pay-fields { display: flex; flex-direction: column; gap: var(--space-5); }
+  .sim-box { margin-top: var(--space-4); padding: var(--space-4); background: var(--accent-50); border-radius: var(--radius-sm); border: 1px dashed var(--accent-200); }
+  .sim-box--row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+  .sim-label { font-size: var(--text-xs); color: var(--text-tertiary); font-weight: 600; }
+  .sim-ok { background: var(--success-700); color: #fff; }
+  .sim-fail { background: var(--error-700); color: #fff; }
+
+  /* ---- Choix du chemin de paiement ---- */
+  .pay-paths { display: grid; grid-template-columns: 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
+  .pay-path { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5); border: 1.5px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); cursor: pointer; transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
+  .pay-path:hover { border-color: var(--border-strong); }
+  .pay-path .pp-radio { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all var(--duration-fast) var(--ease-out); }
+  .pay-path .pp-radio svg { width: 11px; height: 11px; color: #fff; opacity: 0; transform: scale(0.6); transition: all var(--duration-fast) var(--ease-out); }
+  .pay-path-body { flex: 1; min-width: 0; }
+  .pay-path-name { font-size: var(--text-base); font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: var(--space-3); }
+  .pay-path-sub { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 4px; line-height: var(--leading-normal); }
+  .pay-path.is-active { border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 1px var(--violet); }
+  .pay-path.is-active .pp-radio { background: var(--violet); border-color: var(--violet); }
+  .pay-path.is-active .pp-radio svg { opacity: 1; transform: scale(1); }
+
+  .pay-panel { display: none; }
+  .pay-panel.is-active { display: block; }
+
+  /* ---- Widget KkiaPay ---- */
+  .kk-brand { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-tertiary); }
+  .kk-brand b { color: var(--violet); font-weight: 700; font-family: var(--font-sans); letter-spacing: -0.01em; }
+  .kk-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: var(--accent-700); background: var(--accent-100); border-radius: 3px; padding: 2px 5px; }
+  .mm-help { font-size: var(--text-xs); color: var(--text-tertiary); display: flex; gap: var(--space-3); align-items: flex-start; line-height: var(--leading-normal); }
+  .mm-help svg { color: var(--lagoon-deep); flex-shrink: 0; margin-top: 1px; }
+  .webhook-note { display: flex; gap: var(--space-3); align-items: flex-start; margin-top: var(--space-5); font-size: var(--text-xs); color: var(--text-tertiary); line-height: var(--leading-normal); }
+  .webhook-note svg { color: var(--lagoon-deep); flex-shrink: 0; margin-top: 1px; }
+
+  /* ---- RIB / espèce → SOP ---- */
+  .rib { border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-paper); overflow: hidden; }
+  .rib-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--sand-25); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-tertiary); }
+  .rib-head svg { color: var(--violet); }
+  .rib-head strong { color: var(--text-secondary); font-weight: 600; }
+  .rib-body { padding: var(--space-5) var(--space-6); }
+  .rib-row { display: flex; justify-content: space-between; gap: var(--space-5); padding: var(--space-4) 0; border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); }
+  .rib-row:last-child { border-bottom: 0; }
+  .rib-row .k { color: var(--text-tertiary); }
+  .rib-row .v { color: var(--text-primary); font-weight: 600; text-align: right; }
+  .rib-row .v.mono { font-family: var(--font-mono); font-weight: 500; }
+  .sop-alert { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); background: var(--accent-50); border: 1px solid var(--accent-200); border-radius: var(--radius-md); margin-top: var(--space-5); }
+  .sop-alert svg { color: var(--ochre); flex-shrink: 0; margin-top: 1px; }
+  .sop-alert-title { font-size: var(--text-sm); font-weight: 700; color: var(--clay-deep); }
+  .sop-alert-text { font-size: var(--text-xs); color: var(--clay-deep); margin-top: 2px; line-height: var(--leading-normal); }
+  .sop-check { margin-top: var(--space-5); display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); border: 1.5px solid var(--border-default); border-radius: var(--radius-md); cursor: pointer; }
+  .sop-check.is-on { border-color: var(--violet); background: var(--violet-soft); }
+  .sop-check .em-check-input { margin-top: 1px; }
+  .sop-check .em-check-input:checked { background-color: var(--violet); border-color: var(--violet); }
+  .sop-check-text { font-size: var(--text-sm); color: var(--text-primary); line-height: var(--leading-normal); }
+
+  /* ---- Breakpoint 480px ---- */
+  @media (min-width: 480px) {
+    .ctx-inner { padding: var(--space-4) var(--space-8); }
+    .action-bar-inner { padding: var(--space-5) var(--space-8); gap: var(--space-5); }
+    .ab-right { flex: initial; }
+    .ab-right .em-btn--lg { flex: initial; }
+    .methods { grid-template-columns: repeat(3, 1fr); }
+    .pay-paths { grid-template-columns: 1fr 1fr; }
+    .field-2 { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ---- Breakpoint 768px ---- */
+  @media (min-width: 768px) {
+    .tunnel { grid-template-columns: 360px 1fr; gap: var(--space-11); padding: var(--space-10) var(--space-8); }
+    .lede { position: sticky; top: 130px; padding: var(--space-9) var(--space-8); }
+    .lede h1 { font-size: var(--text-3xl); }
+    .ab-secure { display: inline-flex; }
+  }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-checkcircle" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm49.53,85.79-58.54,56a8,8,0,0,1-11,0L78.47,141.79a8,8,0,1,1,11-11.62L114,153.83l52.54-50.26a8,8,0,0,1,11,11.62Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-card" viewBox="0 0 256 256"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64ZM32,192V104H224v88Zm184-24a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h40A8,8,0,0,1,216,168Zm-72,0a8,8,0,0,1-8,8H120a8,8,0,0,1,0-16h16A8,8,0,0,1,144,168Z"/></symbol>
+  <symbol id="i-mobile" viewBox="0 0 256 256"><path d="M176,16H80A24,24,0,0,0,56,40V216a24,24,0,0,0,24,24h96a24,24,0,0,0,24-24V40A24,24,0,0,0,176,16Zm8,200a8,8,0,0,1-8,8H80a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h96a8,8,0,0,1,8,8Zm-44-32a12,12,0,1,1-12-12A12,12,0,0,1,140,184Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 256 256"><path d="M208,80H172V52a44,44,0,0,0-88,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM100,52a28,28,0,0,1,56,0V80H100Zm28,128a16,16,0,1,1,16-16A16,16,0,0,1,128,180Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 256 256"><path d="M208,40H48A16,16,0,0,0,32,56v58.78c0,89.61,75.82,119.34,91,124.39a15.53,15.53,0,0,0,10,0c15.2-5.05,91-34.78,91-124.39V56A16,16,0,0,0,208,40Zm-34.34,69.66-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L120,140.69l42.34-42.35a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 256 256"><path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,40.65,201.57,88H54.43Z"/></symbol>
+</svg>
+
+<div class="ctx-strip">
+  <div class="ctx-inner">
+    <span class="ok"><svg class="ico-sm"><use href="#i-check"/></svg>Dossier complet &amp; vérifié</span>
+    <span class="ctx-sep">›</span>
+    <span class="ctx-cur">Paiement des frais</span>
+  </div>
+</div>
+
+<main class="tunnel" id="main">
+  <!-- Order summary -->
+  <aside class="lede">
+    <span class="t-overline lede-eyebrow">{etape.data.eyebrow}</span>
+    <h1>{etape.data.titre}</h1>
+    <div class="amount"><span id="amt-main">…</span><span class="cur">FCFA</span></div>
+    <div class="lede-line"><span>Frais d'étude de dossier</span><span class="v" id="amt-line">…</span></div>
+    <div class="lede-line"><span>Dossier</span><span class="v t-mono" id="dossier-ref">—</span></div>
+    <div class="lede-points">
+      {etape.data.points.map(pt => (
+        <div class="lede-point">
+          <svg class="ico-lg"><use href={`#${pt.icon}`}/></svg>
+          <span><strong>{pt.titre}</strong>{pt.detail}</span>
+        </div>
+      ))}
+    </div>
+  </aside>
+
+  <!-- Payment column -->
+  <div>
+    <div class="pay-head" id="pay-head">Comment régler vos frais de dossier ?</div>
+
+    <div class="pay-paths" role="radiogroup" aria-label="Mode de paiement">
+      <div class="pay-path is-active" data-path="online" role="radio" aria-checked="true" tabindex="0">
+        <span class="pp-radio"><svg><use href="#i-check"/></svg></span>
+        <span class="pay-path-body">
+          <span class="pay-path-name"><svg class="ico"><use href="#i-mobile"/></svg>En ligne</span>
+          <span class="pay-path-sub">MTN MoMo, Moov Money ou carte — via KkiaPay. Confirmation immédiate.</span>
+        </span>
+      </div>
+      <div class="pay-path" data-path="sop" role="radio" aria-checked="false" tabindex="0">
+        <span class="pp-radio"><svg><use href="#i-check"/></svg></span>
+        <span class="pay-path-body">
+          <span class="pay-path-name"><svg class="ico"><use href="#i-bank"/></svg>Espèce ou banque</span>
+          <span class="pay-path-sub">Paiement sur place ou par virement. Dossier en soumission provisoire.</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Panneau : en ligne (KkiaPay) -->
+    <div class="pay-panel is-active" id="panel-online">
+      <div class="secure">
+        <div class="secure-head">
+          <svg class="ico-sm"><use href="#i-lock"/></svg>
+          <strong>Zone sécurisée</strong>&nbsp;— paiement traité par l'agrégateur
+          <span class="kk-brand"><b>KkiaPay</b><span class="kk-tag">SANDBOX</span></span>
+        </div>
+        <div class="secure-body">
+          <div class="methods" role="radiogroup" aria-label="Moyen de paiement en ligne">
+            <label class="method is-active" data-m="mtn"><input type="radio" name="kkm" class="sr-only" checked /><svg class="ico-lg"><use href="#i-mobile"/></svg>MTN MoMo</label>
+            <label class="method" data-m="moov"><input type="radio" name="kkm" class="sr-only" /><svg class="ico-lg"><use href="#i-mobile"/></svg>Moov Money</label>
+            <label class="method" data-m="carte"><input type="radio" name="kkm" class="sr-only" /><svg class="ico-lg"><use href="#i-card"/></svg>Carte</label>
+          </div>
+
+          <div id="fields-momo" class="pay-fields">
+            <div class="em-field">
+              <label class="em-field-label" for="momo-num">Numéro Mobile Money</label>
+              <input type="tel" class="em-input" id="momo-num" inputmode="tel" placeholder="+229…" />
+            </div>
+            <div class="mm-help"><svg class="ico-sm"><use href="#i-mobile"/></svg><span>Vous recevrez une demande de confirmation <strong id="mm-op">MTN MoMo</strong> sur votre téléphone. Validez avec votre code secret.</span></div>
+          </div>
+
+          <div id="fields-carte" hidden class="pay-fields">
+            <div class="em-field">
+              <label class="em-field-label" for="cardnum">Numéro de carte</label>
+              <div class="card-number-wrap">
+                <input type="text" class="em-input" id="cardnum" inputmode="numeric" placeholder="0000 0000 0000 0000" autocomplete="cc-number" />
+                <span class="card-brands"><span class="brand-chip">VISA</span><span class="brand-chip">MC</span></span>
+              </div>
+            </div>
+            <div class="field-2">
+              <div class="em-field">
+                <label class="em-field-label" for="exp">Expiration</label>
+                <input type="text" class="em-input" id="exp" inputmode="numeric" placeholder="MM / AA" autocomplete="cc-exp" />
+              </div>
+              <div class="em-field">
+                <label class="em-field-label" for="cvc">CVC</label>
+                <input type="text" class="em-input" id="cvc" inputmode="numeric" placeholder="123" autocomplete="cc-csc" />
+              </div>
+            </div>
+            <div class="em-field">
+              <label class="em-field-label" for="holder">Nom sur la carte</label>
+              <input type="text" class="em-input" id="holder" autocomplete="cc-name" />
+            </div>
+          </div>
+
+          <div class="webhook-note"><svg class="ico-sm"><use href="#i-shield"/></svg><span>Confirmation transmise par KkiaPay et validée par nos serveurs (webhook). Votre candidature est soumise dès la confirmation du paiement.</span></div>
+
+          <label class="sop-check" id="online-consent-check" style="margin-top:12px">
+            <input type="checkbox" class="em-check-input" id="online-consent-cb" />
+            <span class="sop-check-text" id="online-consent-text">J'ai pris connaissance du caractère <strong>non remboursable</strong> des frais de candidature.</span>
+          </label>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Panneau : espèce / banque → SOP -->
+    <div class="pay-panel" id="panel-sop">
+      <div class="rib">
+        <div class="rib-head"><svg class="ico-sm"><use href="#i-bank"/></svg><strong>Coordonnées bancaires — LaNEM</strong></div>
+        <div class="rib-body">
+          <div class="rib-row"><span class="k">Banque</span><span class="v" id="rib-banque">—</span></div>
+          <div class="rib-row"><span class="k">Titulaire du compte</span><span class="v" id="rib-titulaire">—</span></div>
+          <div class="rib-row"><span class="k">IBAN</span><span class="v mono" id="rib-iban">—</span></div>
+          <div class="rib-row"><span class="k">BIC / SWIFT</span><span class="v mono" id="rib-bic">—</span></div>
+          <div class="rib-row"><span class="k">Référence à rappeler</span><span class="v mono" id="rib-ref">—</span></div>
+        </div>
+        </div>
+      </div>
+
+      <p class="t-caption" style="margin-top:8px;color:var(--text-tertiary)">Ces coordonnées vous seront aussi envoyées par e-mail avec le RIB officiel en PDF.</p>
+
+      <div class="sop-alert">
+        <svg class="ico-lg"><use href="#i-info"/></svg>
+        <span>
+          <span class="sop-alert-title">Votre dossier passera en « soumission provisoire » (SOP)</span>
+          <span class="sop-alert-text">Réglez sur place ou par virement avec la référence ci-dessus. À réception, l'Administratif confirme le paiement et votre candidature est définitivement soumise.</span>
+        </span>
+      </div>
+
+      <label class="sop-check" id="sop-check">
+        <input type="checkbox" class="em-check-input" id="sop-cb" />
+        <span class="sop-check-text">Je réglerai les frais <strong>sur place ou par virement</strong>, j'ai pris connaissance de leur caractère <strong>non remboursable</strong>, et je demande l'enregistrement de ma candidature en soumission provisoire.</span>
+      </label>
+      <p class="t-caption" id="refund-policy-note" style="margin-top:8px;color:var(--text-tertiary)"></p>
+    </div>
+  </div>
+</main>
+
+<div class="action-bar">
+  <div class="action-bar-inner">
+    <span class="ab-secure" id="ab-secure"><svg class="ico-sm"><use href="#i-lock"/></svg>Connexion chiffrée · confirmation immédiate par KkiaPay</span>
+    <div class="ab-right">
+      <button type="button" class="em-btn em-btn--primary em-btn--lg" id="pay-cta">Payer<svg class="ico"><use href="#i-caretright"/></svg></button>
+    </div>
+  </div>
+</div>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+/* LOT-A3 — paiement : MONTANTS RÉELS via get_frais (plus aucun montant en dur — le back
+   fait foi, zéro calcul front), consentement remboursement câblé (exigé par le back sur
+   les 2 canaux), namespace AT.api (ADM-DEBT-13), token tourné géré par le tunnel (40). */
+(function () {
+  var paths = Array.prototype.slice.call(document.querySelectorAll('.pay-path'));
+  var panelOnline = document.getElementById('panel-online');
+  var panelSop = document.getElementById('panel-sop');
+  var cta = document.getElementById('pay-cta');
+  var abSecure = document.getElementById('ab-secure');
+  var sopCheck = document.getElementById('sop-check');
+  var sopCb = document.getElementById('sop-cb');
+  var onlineCb = document.getElementById('online-consent-cb');
+  var onlineCheck = document.getElementById('online-consent-check');
+
+  var methods = Array.prototype.slice.call(document.querySelectorAll('#panel-online .method'));
+  var fMomo = document.getElementById('fields-momo');
+  var fCarte = document.getElementById('fields-carte');
+  var mmOp = document.getElementById('mm-op');
+
+  var AT = window.AdmissionTunnel;
+  var ctx = AT.readCtx();
+
+  var current = 'online';
+  var fraisLabel = '';
+
+  /* ---- Référence dossier réelle (ancrage sessionStorage) ---- */
+  var dossierId = AT.getDossierId();
+  if (!dossierId || !AT.getDossierToken()) { window.location.href = '/reprise'; return; }
+  AT.onTokenExpired = function () { AT.navigateTo('/reprise'); };
+  document.getElementById('dossier-ref').textContent = dossierId || '—';
+  document.getElementById('rib-ref').textContent = dossierId || '—';
+
+  /* ---- ADM-DEBT-48 : montant réel du catalogue (get_frais) ---- */
+  AT.api.getFrais(ctx.session ? { session: ctx.session } : {}, function (res) {
+    if (res.ok && res.data && res.data.frais1) {
+      var amt = AT.fmtXOF(res.data.frais1.montant_xof);
+      fraisLabel = amt + ' FCFA';
+      document.getElementById('amt-main').textContent = amt;
+      document.getElementById('amt-line').textContent = fraisLabel;
+      document.getElementById('pay-head').textContent = 'Comment régler les ' + fraisLabel + ' ?';
+      /* LOT RIB-SETTINGS : coordonnées SERVEUR (source unique) — absentes → canal virement MASQUÉ. */
+      var rib = res.data.rib;
+      if (rib) {
+        document.getElementById('rib-banque').textContent = rib.banque;
+        document.getElementById('rib-titulaire').textContent = rib.titulaire;
+        document.getElementById('rib-iban').textContent = rib.iban;
+        document.getElementById('rib-bic').textContent = rib.bic;
+      } else {
+        var sopPath = document.querySelector('.pay-path[data-path="sop"]');
+        if (sopPath) sopPath.style.display = 'none';
+        panelSop.style.display = 'none';
+        selectPath('online');
+      }
+      syncCta();
+    } else {
+      document.getElementById('amt-main').textContent = '—';
+      document.getElementById('amt-line').textContent = 'Montant indisponible';
+    }
+  });
+
+  /* ---- ADM-DEBT-48 : politique de remboursement (texte légal versionné) ---- */
+  AT.api.getLegalDocuments('REFUND_POLICY', function (res) {
+    var docs = res.ok && res.data && res.data.documents;
+    var key = docs && Object.keys(docs)[0];
+    if (key) {
+      var note = document.getElementById('refund-policy-note');
+      if (note) { note.textContent = 'Politique de remboursement v' + (docs[key].version || '') + ' — ' + (docs[key].content_text || '').slice(0, 220); }
+    }
+  });
+
+  function ctaHTML(label) {
+    return label + '<svg class="ico"><use href="#i-caretright"/></svg>';
+  }
+
+  function consentOk() {
+    return current === 'online' ? !!(onlineCb && onlineCb.checked) : !!(sopCb && sopCb.checked);
+  }
+
+  function payDone(res, target) {
+    if (res.ok) { AT.navigateTo(target); }
+    else {
+      alert((res.error && res.error.message) || 'Le paiement a échoué.');
+      syncCta();
+    }
+  }
+
+  /* LOT KKIAPAY : widget réel — le webhook (re-vérifié serveur) fait foi, le listener
+     succès du widget ne fait qu'ouvrir l'attente de confirmation (poll BRO/SOP→SOU). */
+  function payOnlineDone(res, target) {
+    if (!res.ok) { payDone(res, target); return; }
+    var desc = res.data || {};
+    var tag = document.querySelector('.kk-tag');
+    if (tag) { tag.textContent = desc.mode === 'live' ? 'SÉCURISÉ' : (desc.mode || '').toUpperCase(); }
+    if (desc.mode === 'mock' || !desc.public_key) { AT.navigateTo(target); return; }  /* DEV inchangé */
+    cta.innerHTML = ctaHTML('Paiement en cours…');
+    AT.kkiapay.launch(desc, {
+      success: function () {
+        cta.innerHTML = ctaHTML('Confirmation en cours…');
+        AT.kkiapay.pollDossierStatus(['SOU'], function (confirmed) {
+          /* timeout file webhook : le suivi reste la source d'information */
+          AT.navigateTo(confirmed ? target : '/suivi');
+        });
+      },
+      failed: function () {
+        alert('Le paiement a été refusé ou annulé. Aucun montant n\'a été débité.');
+        syncCta();
+      },
+      unavailable: function () {
+        alert('Le service de paiement est momentanément indisponible. Réessayez ou choisissez le canal virement.');
+        syncCta();
+      }
+    });
+  }
+
+  function syncCta() {
+    var ok = consentOk();
+    if (ok) { cta.removeAttribute('disabled'); cta.setAttribute('aria-disabled', 'false'); }
+    else { cta.setAttribute('disabled', ''); cta.setAttribute('aria-disabled', 'true'); }
+    if (current === 'online') {
+      cta.innerHTML = ctaHTML(fraisLabel ? 'Payer ' + fraisLabel : 'Payer');
+      abSecure.querySelector('use').setAttribute('href', '#i-lock');
+      abSecure.lastChild.textContent = 'Connexion chiffrée · confirmation immédiate par KkiaPay';
+      cta.onclick = function () {
+        cta.setAttribute('disabled', '');
+        AT.api.processPayment('success', function (res) { payOnlineDone(res, '/paiement-accepte'); }, { consentRefund: consentOk() });
+      };
+    } else {
+      cta.innerHTML = ctaHTML('Enregistrer en soumission provisoire');
+      abSecure.querySelector('use').setAttribute('href', '#i-info');
+      abSecure.lastChild.textContent = "Confirmation du paiement par l'Administratif après réception";
+      cta.onclick = function () {
+        cta.setAttribute('disabled', '');
+        AT.api.processPayment('sop', function (res) { payDone(res, '/paiement-sop'); }, { consentRefund: consentOk() });
+      };
+    }
+  }
+
+  function selectPath(p) {
+    current = p;
+    paths.forEach(function (el) {
+      var on = el.dataset.path === p;
+      el.classList.toggle('is-active', on);
+      el.setAttribute('aria-checked', on);
+    });
+    panelOnline.classList.toggle('is-active', p === 'online');
+    panelSop.classList.toggle('is-active', p === 'sop');
+    syncCta();
+  }
+
+  paths.forEach(function (el) {
+    el.addEventListener('click', function () { selectPath(el.dataset.path); });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); selectPath(el.dataset.path); }
+    });
+  });
+
+  function selectMethod(m) {
+    methods.forEach(function (el) { el.classList.toggle('is-active', el.dataset.m === m); });
+    var isCarte = m === 'carte';
+    fMomo.hidden = isCarte;
+    fCarte.hidden = !isCarte;
+    if (m === 'mtn') mmOp.textContent = 'MTN MoMo';
+    if (m === 'moov') mmOp.textContent = 'Moov Money';
+  }
+  methods.forEach(function (el) {
+    el.addEventListener('click', function () { selectMethod(el.dataset.m); });
+  });
+
+  sopCb.addEventListener('change', function () {
+    sopCheck.classList.toggle('is-on', sopCb.checked);
+    syncCta();
+  });
+  if (onlineCb) {
+    onlineCb.addEventListener('change', function () {
+      onlineCheck.classList.toggle('is-on', onlineCb.checked);
+      syncCta();
+    });
+  }
+
+  syncCta();
+})();
+</script>
+
+
+</TunnelLayout>

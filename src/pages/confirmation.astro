@@ -1,0 +1,142 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const msg = await getEntry('messages', 'confirmation');
+---
+<TunnelLayout title={msg.data.titre} footer="full">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .confirm { max-width: 620px; margin: 0 auto; padding: var(--space-10) var(--space-5); text-align: center; }
+
+  .success-mark { width: 72px; height: 72px; border-radius: 50%; background: var(--accent-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--space-6); box-shadow: 0 8px 24px -8px rgba(245,158,11,0.5); }
+  .success-mark svg { width: 36px; height: 36px; }
+  .confirm h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--violet); }
+  .confirm-lead { margin-top: var(--space-4); font-size: var(--text-md); color: var(--text-secondary); text-wrap: pretty; }
+
+  /* Dossier card */
+  .dossier { margin-top: var(--space-8); background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; text-align: left; }
+  .dossier-main { padding: var(--space-6) var(--space-7); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; }
+  .dossier-label { font-size: var(--text-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
+  .dossier-num { font-family: var(--font-mono); font-size: var(--text-xl); font-weight: 600; color: var(--violet); letter-spacing: 0.01em; margin-top: var(--space-2); white-space: nowrap; }
+  @media (min-width: 480px) { .confirm { padding: var(--space-12) var(--space-7); } .confirm h1 { font-size: var(--text-3xl); } .dossier-num { font-size: var(--text-2xl); } }
+  .dossier-foot { padding: var(--space-4) var(--space-7); border-top: 1px solid var(--border-subtle); background: var(--sand-25); display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); }
+  .dossier-foot svg { color: var(--lagoon-deep); flex-shrink: 0; }
+  .dossier-foot strong { color: var(--text-primary); font-weight: 600; }
+
+  /* Next steps */
+  .next { margin-top: var(--space-9); text-align: left; }
+  .next-title { font-size: var(--text-md); font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-3); }
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step-row { display: flex; gap: var(--space-5); padding-bottom: var(--space-7); position: relative; }
+  .step-row:last-child { padding-bottom: 0; }
+  .step-row::before { content: ''; position: absolute; left: 17px; top: 36px; bottom: -4px; width: 2px; background: var(--sand-200); }
+  .step-row:last-child::before { display: none; }
+  .step-dot { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .step-dot--now { background: var(--violet-soft); color: var(--violet); border: 1.5px solid var(--violet); }
+  .step-dot--soon { background: var(--surface-paper); color: var(--sand-500); border: 1.5px solid var(--border-strong); }
+  .step-body { padding-top: 2px; }
+  .step-name { font-size: var(--text-base); font-weight: 600; color: var(--text-primary); }
+  .step-desc { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 2px; }
+
+  /* CTAs */
+  .actions { margin-top: var(--space-9); display: flex; flex-direction: column; gap: var(--space-4); }
+  .note { margin-top: var(--space-7); font-size: var(--text-xs); color: var(--text-tertiary); }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-caretright" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 256 256"><path d="M184,64H40A16,16,0,0,0,24,80V224a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V80A16,16,0,0,0,184,64Zm0,160H40V80H184ZM232,56V200a8,8,0,0,1-16,0V56H72a8,8,0,0,1,0-16H216A16,16,0,0,1,232,56Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 256 256"><path d="M224,152v56a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V152a8,8,0,0,1,16,0v56H208V152a8,8,0,0,1,16,0ZM82.34,114.34,120,76.69V168a8,8,0,0,0,16,0V76.69l37.66,37.65a8,8,0,0,0,11.32-11.32l-50.34-50.34a8,8,0,0,0-11.32,0L71,103a8,8,0,0,0,11.32,11.32Z"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V96H208ZM72,64H48V48H72Zm120,0H184V48h8Z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 256 256"><path d="M42.76,50.78A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.36,0,27.27-4.34,41.49-16.78A8,8,0,0,0,232,177V64a8,8,0,0,0-13.27-6C187.94,84.69,165.66,73.66,139.55,60.74,112.66,47.43,82.21,32.37,42.76,50.78Z"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 256 256"><path d="M208,144a15.78,15.78,0,0,1-10.42,14.94l-51.65,19-19,51.61a15.92,15.92,0,0,1-29.88,0L78,178l-51.62-19a15.92,15.92,0,0,1,0-29.88l51.65-19,19-51.61a15.92,15.92,0,0,1,29.88,0l19,51.65,51.61,19A15.78,15.78,0,0,1,208,144Z"/></symbol>
+</svg>
+
+<main class="confirm" id="main">
+  <span class="success-mark"><svg><use href="#i-check"/></svg></span>
+  <h1>{msg.data.titre}</h1>
+  <p class="confirm-lead">{msg.data.corps}</p>
+
+  <div class="dossier">
+    <div class="dossier-main">
+      <div>
+        <div class="dossier-label">Numéro de dossier</div>
+        <div class="dossier-num" id="cf-num">—</div>
+      </div>
+      <button type="button" class="em-btn em-btn--secondary" id="cf-copy"><svg class="ico"><use href="#i-copy"/></svg>Copier</button>
+    </div>
+    <div class="dossier-foot">
+      <svg class="ico"><use href="#i-envelope"/></svg>
+      <span>Confirmation envoyée à votre adresse e-mail avec votre lien de reprise.</span>
+    </div>
+  </div>
+
+  <section class="next">
+    <h2 class="next-title"><svg class="ico-lg c-gold"><use href="#i-sparkle"/></svg>Et maintenant&nbsp;?</h2>
+    <div class="steps">
+      <div class="step-row">
+        <span class="step-dot step-dot--now"><svg class="ico"><use href="#i-search"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Étude de votre dossier</span>
+          <span class="step-desc">Sous 5 à 10 jours ouvrés. Vous êtes notifié·e par email à chaque changement.</span>
+        </span>
+      </div>
+      <div class="step-row">
+        <span class="step-dot step-dot--soon"><svg class="ico"><use href="#i-cal"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Convocation au test d'admission</span>
+          <span class="step-desc">Si votre programme comporte un concours, la date vous est confirmée par email.</span>
+        </span>
+      </div>
+      <div class="step-row">
+        <span class="step-dot step-dot--soon"><svg class="ico"><use href="#i-flag"/></svg></span>
+        <span class="step-body">
+          <span class="step-name">Décision d'admission</span>
+          <span class="step-desc">Communiquée par email et consultable à tout moment dans votre suivi.</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <a href="/suivi" class="em-btn em-btn--primary em-btn--lg em-btn--block">Suivre mon dossier<svg class="ico"><use href="#i-caretright"/></svg></a>
+  </div>
+
+  <p class="note">Conservez votre numéro de dossier&nbsp;: il vous sera demandé pour toute correspondance.</p>
+</main>
+
+
+<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline>
+/* LOT F (F9) — numéro de dossier RÉEL + bouton copier fonctionnel. */
+(function () {
+  'use strict';
+  var AT = window.AdmissionTunnel;
+  var id = AT.getDossierId() || '—';
+  document.getElementById('cf-num').textContent = id;
+  var btn = document.getElementById('cf-copy');
+  btn.addEventListener('click', function () {
+    if (navigator.clipboard && id !== '—') {
+      navigator.clipboard.writeText(id).then(function () {
+        btn.textContent = 'Copié !';
+        setTimeout(function () { btn.textContent = 'Copier'; }, 1600);
+      });
+    }
+  });
+})();
+</script>
+
+</TunnelLayout>

@@ -1,0 +1,79 @@
+---
+import TunnelLayout from '../layouts/TunnelLayout.astro';
+import { getEntry } from 'astro:content';
+const msg = await getEntry('messages', 'paiement-ko');
+---
+<TunnelLayout title={msg.data.titre} footer="full">
+<style is:global>
+
+  body { background: var(--cream); -webkit-font-smoothing: antialiased; }
+  .ico { width: 18px; height: 18px; flex-shrink: 0; }
+  .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
+  .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .res { max-width: 600px; margin: 0 auto; padding: var(--space-10) var(--space-5); text-align: center; }
+  .mark { width: 72px; height: 72px; border-radius: 50%; background: var(--error-50); color: var(--error-700); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--space-6); border: 1.5px solid var(--error-100); }
+  .mark svg { width: 34px; height: 34px; }
+  .res h1 { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; color: var(--violet); }
+  @media (min-width: 480px) { .res { padding: var(--space-12) var(--space-7); } .res h1 { font-size: var(--text-3xl); } }
+  .res-lead { margin-top: var(--space-4); font-size: var(--text-md); color: var(--text-secondary); text-wrap: pretty; }
+
+  /* Reason card */
+  .reason { margin-top: var(--space-8); background: var(--error-50); border: 1px solid var(--error-100); border-radius: var(--radius-lg); padding: var(--space-6); display: flex; gap: var(--space-4); align-items: flex-start; text-align: left; }
+  .reason svg { color: var(--error-700); flex-shrink: 0; margin-top: 1px; }
+  .reason-title { font-size: var(--text-sm); font-weight: 600; color: var(--error-900); }
+  .reason-text { font-size: var(--text-sm); color: var(--error-700); margin-top: 2px; line-height: var(--leading-normal); }
+
+  /* Reassure: no charge + dossier kept */
+  .reassure { margin-top: var(--space-5); background: var(--surface-paper); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); text-align: left; }
+  .rline { display: flex; gap: var(--space-4); align-items: flex-start; font-size: var(--text-sm); color: var(--text-secondary); }
+  .rline svg { color: var(--lagoon-deep); flex-shrink: 0; margin-top: 1px; }
+  .rline strong { color: var(--text-primary); font-weight: 600; }
+
+  .actions { margin-top: var(--space-8); display: flex; flex-direction: column; gap: var(--space-4); }
+  .help { margin-top: var(--space-7); font-size: var(--text-xs); color: var(--text-tertiary); }
+  .help a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+
+  .em-btn--primary { background: var(--gold); color: var(--gold-ink); }
+  .em-btn--primary:hover { background: var(--gold-deep); color: var(--gold-ink); }
+
+</style>
+
+
+<svg class="svg-sprites" aria-hidden="true">
+  <symbol id="i-x" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"/></symbol>
+  <symbol id="i-retry" viewBox="0 0 256 256"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A146.18,146.18,0,0,1,80,46.41,93.62,93.62,0,0,1,128,32,96.11,96.11,0,0,1,224,128Z"/></symbol>
+  <symbol id="i-card" viewBox="0 0 256 256"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64ZM32,192V104H224v88Z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 256 256"><path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm-36,84a12,12,0,1,1,12-12A12,12,0,0,1,180,148Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 256 256"><path d="M208,40H48A16,16,0,0,0,32,56v58.78c0,89.61,75.82,119.34,91,124.39a15.53,15.53,0,0,0,10,0c15.2-5.05,91-34.78,91-124.39V56A16,16,0,0,0,208,40Zm-34.34,69.66-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L120,140.69l42.34-42.35a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 256 256"><path d="M216,72H130.67L102.93,51.2A15.89,15.89,0,0,0,93.33,48H40A16,16,0,0,0,24,64V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,64H93.33l21.34,16H40Zm176,136H40V96H216Z"/></symbol>
+</svg>
+
+<main class="res" id="main">
+  <span class="mark"><svg><use href="#i-x"/></svg></span>
+  <h1>{msg.data.titre}</h1>
+  <p class="res-lead">{msg.data.corps}</p>
+
+  <div class="reason" role="alert">
+    <svg class="ico-lg"><use href="#i-x"/></svg>
+    <span>
+      <span class="reason-title">Paiement non confirmé</span>
+      <span class="reason-text">KkiaPay n'a reçu aucune confirmation (annulation, solde insuffisant ou délai dépassé). Réessayez, ou réglez par espèce / banque.</span>
+    </span>
+  </div>
+
+  <div class="reassure">
+    <div class="rline"><svg class="ico-lg"><use href="#i-shield"/></svg><span><strong>Aucun montant n'a été débité.</strong> Si une empreinte apparaît sur votre compte, elle sera automatiquement annulée sous 48&nbsp;h.</span></div>
+    <div class="rline"><svg class="ico-lg"><use href="#i-folder"/></svg><span><strong>Votre dossier est conservé.</strong> Candidature CAN-2026-04821 — il ne reste que le paiement à finaliser.</span></div>
+  </div>
+
+  <div class="actions">
+    <a href="/paiement" class="em-btn em-btn--primary em-btn--lg em-btn--block"><svg class="ico"><use href="#i-retry"/></svg>Réessayer le paiement</a>
+    <a href="/paiement" class="em-btn em-btn--secondary em-btn--lg em-btn--block"><svg class="ico"><use href="#i-wallet"/></svg>Régler par espèce ou banque</a>
+  </div>
+
+  <p class="help">Le problème persiste&nbsp;? <a href="#">Contactez le service des admissions</a> — votre dossier reste valable.</p>
+</main>
+
+
+</TunnelLayout>

@@ -1,0 +1,81 @@
+---
+/**
+ * TunnelLayout.astro — Gabarit principal de l'app applicant
+ * ---------------------------------------------------------
+ * AJOUTS vs version initiale :
+ *   - <Header /> rendu pour TOUTES les pages (fin de la duplication du
+ *     <header class="site-header"> dans chaque page).
+ *   - Prop `footer` : choisit le pied de page selon le type de page.
+ *
+ * Convention `footer` :
+ *   - 'strip' (defaut) -> ruban legal minimal. Pour les ETAPES du tunnel
+ *      qui ont une barre d'action collante (index, identite, bourses,
+ *      pieces, recapitulatif, paiement).
+ *   - 'full'  -> footer riche. Pour les pages terminales sans barre
+ *      d'action (confirmation, suivi, paiement-accepte/echoue/sop).
+ *   - 'none'  -> aucun footer.
+ *
+ * La barre de PROGRESSION reste fournie par chaque page (juste sous le
+ * header), inchangee.
+ */
+import '@emela/design-system/index.css';
+import '@emela/design-system/palette-ext.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import FooterLegalStrip from '../components/FooterLegalStrip.astro';
+
+interface Props {
+  title: string;
+  footer?: 'full' | 'strip' | 'none';
+}
+const { title, footer = 'strip' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap"
+      />
+    </noscript>
+  </head>
+  <body>
+    <!-- G3 (WCAG 2.4.1) : lien d'évitement vers le contenu principal -->
+    <a class="skip-link" href="#main">Aller au contenu</a>
+    <style>
+      .skip-link {
+        position: absolute; left: -9999px; top: 0; z-index: 9999;
+        background: var(--violet, #5B3FA8); color: #fff; padding: 10px 18px;
+        border-radius: 0 0 8px 0; font-weight: 600; text-decoration: none;
+      }
+      .skip-link:focus { left: 0; }
+      /* G3 (WCAG 2.4.7) : indicateur de focus visible homogène */
+      :focus-visible { outline: 2px solid var(--violet, #5B3FA8); outline-offset: 2px; }
+    </style>
+    <Header />
+    <slot />
+    {footer === 'full' && <Footer />}
+    {footer === 'strip' && <FooterLegalStrip />}
+    <script is:inline>
+      /* G3 (WCAG 1.1.1) : icônes décoratives <svg><use> ignorées par les lecteurs d'écran */
+      document.querySelectorAll('svg:not([aria-label]):not([aria-hidden])').forEach(function (s) {
+        s.setAttribute('aria-hidden', 'true');
+        s.setAttribute('focusable', 'false');
+      });
+    </script>
+  </body>
+</html>

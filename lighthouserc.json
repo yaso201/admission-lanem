@@ -1,0 +1,38 @@
+{
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:4322/",
+        "http://localhost:4322/identite/",
+        "http://localhost:4322/bourses/",
+        "http://localhost:4322/pieces/",
+        "http://localhost:4322/recapitulatif/",
+        "http://localhost:4322/paiement/",
+        "http://localhost:4322/confirmation/",
+        "http://localhost:4322/suivi/",
+        "http://localhost:4322/paiement-accepte/",
+        "http://localhost:4322/paiement-echoue/",
+        "http://localhost:4322/paiement-sop/",
+        "http://localhost:4322/legal/cgv/",
+        "http://localhost:4322/legal/politique-de-confidentialite/",
+        "http://localhost:4322/legal/politique-de-remboursement/",
+        "http://localhost:4322/legal/consentement-transfert-donnees/"
+      ],
+      "numberOfRuns": 1,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless --disable-gpu",
+        "onlyCategories": ["accessibility", "best-practices", "seo"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["warn", { "minScore": 0.9 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

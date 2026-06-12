@@ -1,0 +1,13 @@
+eyebrow: "\xC9tape 3 \xB7 Pi\xE8ces"
+titre: "Vos justificatifs"
+description: "Ajoutez les pi\xE8ces demand\xE9es pour votre niveau. Chaque fichier part d\xE8s que vous l'ajoutez."
+points:
+  - icon: i-cloud
+    titre: "Envoi progressif"
+    detail: "Inutile de tout charger d'un coup."
+  - icon: i-retry
+    titre: "Reprise apr\xE8s coupure"
+    detail: "Un envoi interrompu reprend \u2014 rien n'est perdu."
+  - icon: i-shield
+    titre: "Photos all\xE9g\xE9es"
+    detail: "Les images sont compress\xE9es pour la 3G."

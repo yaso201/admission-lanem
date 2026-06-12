@@ -1,0 +1,13 @@
+eyebrow: "Derni\xE8re \xE9tape \xB7 Paiement"
+titre: "Frais de candidature"
+description: "R\xE9glez vos frais pour soumettre officiellement votre candidature."
+points:
+  - icon: i-checkcircle
+    titre: "Le paiement vaut soumission"
+    detail: "Votre candidature est transmise d\xE8s le paiement confirm\xE9."
+  - icon: i-shield
+    titre: "S\xE9curis\xE9 via KkiaPay"
+    detail: "MTN MoMo, Moov Money ou carte bancaire."
+  - icon: i-envelope
+    titre: "Re\xE7u par email"
+    detail: "Un justificatif vous est envoy\xE9 apr\xE8s paiement."

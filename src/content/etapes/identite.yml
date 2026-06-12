@@ -1,0 +1,13 @@
+eyebrow: "\xC9tape 2 \xB7 Identit\xE9"
+titre: "Vos coordonn\xE9es"
+description: "Renseignez votre identit\xE9, puis v\xE9rifiez votre email et votre t\xE9l\xE9phone. Cette double v\xE9rification s\xE9curise votre dossier."
+points:
+  - icon: i-shield
+    titre: "Donn\xE9es prot\xE9g\xE9es"
+    detail: "Utilis\xE9es uniquement pour votre candidature."
+  - icon: i-envelope
+    titre: "Email v\xE9rifi\xE9"
+    detail: "Pour le suivi et la d\xE9cision d'admission."
+  - icon: i-phone
+    titre: "T\xE9l\xE9phone v\xE9rifi\xE9"
+    detail: "Pour les convocations au test."
