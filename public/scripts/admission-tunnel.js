@@ -30,7 +30,8 @@
 
   /** URL de base du back Frappe admission.
    *  Configurable : lire window.ADMISSION_API_BASE si défini. */
-  var API_BASE = global.ADMISSION_API_BASE || 'http://admission-dev.localhost:8010';
+  var _metaBase = (document.querySelector('meta[name="admission-api-base"]') || {}).content;
+  var API_BASE = global.ADMISSION_API_BASE || _metaBase || 'http://admission-dev.localhost:8010';
 
   /** Préfixe des endpoints Frappe whitelisted. */
   var API_PREFIX = '/api/method/admission.api.';
