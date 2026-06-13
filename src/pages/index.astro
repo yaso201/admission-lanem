@@ -64,6 +64,7 @@ const etape = await getEntry('etapes', 'formation');
   .session-card.is-selected { border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 1px var(--violet); }
   .session-card.is-selected .radio-mark { background: var(--violet); border-color: var(--violet); }
   .session-card.is-selected .radio-mark svg { opacity: 1; transform: scale(1); }
+  .prog-choice { margin-top: 8px; font-size: var(--text-sm); color: var(--text-secondary); font-weight: 500; }
 
   /* ---- Note rassurante (de A) ---- */
   .reassure { margin-top: var(--space-6); display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); background: var(--clay-soft); border: 1px solid #F4DFC8; border-radius: var(--radius-md); }
@@ -201,6 +202,7 @@ const etape = await getEntry('etapes', 'formation');
           <option value="">Chargement des programmes…</option>
         </select>
         <span class="em-field-help">Vous pourrez changer de formation tant que la candidature n'est pas soumise.</span>
+        <p class="prog-choice" id="prog-choice" hidden></p>
       </div>
     </div>
 
@@ -302,6 +304,7 @@ const etape = await getEntry('etapes', 'formation');
   var wantBourse = false;
   var sessions = [];        // sessions du programme sélectionné
   var currentSession = '';  // id back de la session sélectionnée
+  var progByCode = {};      // métadonnées catalogue par code (partner/parcours/affinité/lieu)
 
   function h(tag, cls, text) {
     var e = document.createElement(tag);
@@ -332,6 +335,18 @@ const etape = await getEntry('etapes', 'formation');
       if (sessions[i].id === currentSession) { return sessions[i].label; }
     }
     return '—';
+  }
+  /* Label de choix : titre · parcours · partenaire (vide → LaNEM) · lieu */
+  function updateChoiceLabel(){
+    var el = document.getElementById('prog-choice');
+    if (!el) { return; }
+    var pr = progByCode[sel.value];
+    if (!pr) { el.hidden = true; return; }
+    var bits = [pr.label, pr.parcours || '', pr.partner || 'LaNEM'];
+    if (pr.dd_affinity) { bits.push(pr.dd_affinity); }
+    if (pr.location) { bits.push(pr.location); }
+    el.textContent = bits.filter(Boolean).join(' · ');
+    el.hidden = false;
   }
 
   /* ---- Frais réels (catalogue back) + éligibilité bourses de la session ---- */
@@ -452,6 +467,7 @@ const etape = await getEntry('etapes', 'formation');
     if (subProg) { subProg.textContent = lbl || '—'; }
     if (recapProg) { recapProg.textContent = lbl || '—'; }
     if (recapSess) { recapSess.textContent = sessionLabel(); }
+    updateChoiceLabel();
     renderProgress();
     renderCTA();
   }
@@ -485,8 +501,11 @@ const etape = await getEntry('etapes', 'formation');
       return;
     }
     progs.forEach(function (pr, i) {
+      progByCode[pr.code] = pr;
       var o = document.createElement('option');
-      o.value = pr.code; o.textContent = pr.label;
+      o.value = pr.code;
+      /* titre + partenaire (vide → LaNEM) ; double-diplo → suffixe d'affinité */
+      o.textContent = pr.label + ' — ' + (pr.partner || 'LaNEM') + (pr.dd_affinity ? ' · ' + pr.dd_affinity : '');
       if (i === 0) { o.selected = true; }
       sel.appendChild(o);
     });
