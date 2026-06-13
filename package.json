@@ -10,7 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@emela/design-system": "workspace:*",
+    "@emela/design-system": "file:./vendor/design-system",
     "astro": "^5.6.0"
   },
   "devDependencies": {
