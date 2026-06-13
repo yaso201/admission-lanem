@@ -16,8 +16,8 @@ backend:
   name: github
   repo: yaso201/admission-lanem
   branch: content
-  # Auth Cloudflare Worker OAuth — URL à configurer au déploiement :
-  # base_url: https://lanem-oauth.workers.dev
+  # Auth Cloudflare Worker OAuth (repo yaso201/admission-sveltia)
+  base_url: https://admission-sveltia.sygiovani201.workers.dev
 
 # Dossier media (images éventuelles du contenu éditorial)
 media_folder: public/media
