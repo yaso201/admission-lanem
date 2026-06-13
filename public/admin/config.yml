@@ -14,13 +14,13 @@
 
 backend:
   name: github
-  repo: yaso201/lanem-admission
+  repo: yaso201/admission-lanem
   branch: content
   # Auth Cloudflare Worker OAuth — URL à configurer au déploiement :
   # base_url: https://lanem-oauth.workers.dev
 
 # Dossier media (images éventuelles du contenu éditorial)
-media_folder: apps/applicant/public/media
+media_folder: public/media
 public_folder: /media
 
 # ---- Collections ----
@@ -31,7 +31,7 @@ collections:
   - name: etapes
     label: "Étapes du tunnel"
     label_singular: "Étape"
-    folder: apps/applicant/src/content/etapes
+    folder: src/content/etapes
     format: yml
     create: false
     slug: "{{slug}}"
@@ -52,7 +52,7 @@ collections:
   - name: messages
     label: "Messages de résultat"
     label_singular: "Message"
-    folder: apps/applicant/src/content/messages
+    folder: src/content/messages
     format: yml
     create: true
     slug: "{{slug}}"
@@ -73,7 +73,7 @@ collections:
   - name: aide
     label: "Messages d'aide"
     label_singular: "Message d'aide"
-    folder: apps/applicant/src/content/aide
+    folder: src/content/aide
     format: yml
     create: true
     slug: "{{slug}}"
@@ -86,7 +86,7 @@ collections:
   - name: legal
     label: "Pages légales"
     label_singular: "Page légale"
-    folder: apps/applicant/src/content/legal
+    folder: src/content/legal
     format: frontmatter
     extension: md
     create: false
