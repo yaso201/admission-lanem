@@ -69,9 +69,14 @@ const apiBase = import.meta.env.PUBLIC_API_BASE || '';
       :focus-visible { outline: 2px solid var(--violet, #5B3FA8); outline-offset: 2px; }
     </style>
     <Header />
-    <slot />
+    <div class="tunnel-body"><slot /></div>
     {footer === 'full' && <Footer />}
     {footer === 'strip' && <FooterLegalStrip />}
+    <style>
+      /* Sticky footer : body en colonne pleine hauteur, le contenu pousse le footer en bas. */
+      body { display: flex; flex-direction: column; min-height: 100vh; }
+      .tunnel-body { flex: 1 0 auto; }
+    </style>
     <script is:inline>
       /* G3 (WCAG 1.1.1) : icônes décoratives <svg><use> ignorées par les lecteurs d'écran */
       document.querySelectorAll('svg:not([aria-label]):not([aria-hidden])').forEach(function (s) {
