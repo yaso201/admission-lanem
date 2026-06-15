@@ -400,23 +400,30 @@ const etape = await getEntry('etapes', 'paiement');
     if (tag) { tag.textContent = desc.mode === 'live' ? 'SÉCURISÉ' : (desc.mode || '').toUpperCase(); }
     if (desc.mode === 'mock' || !desc.public_key) { AT.navigateTo(target); return; }  /* DEV inchangé */
     cta.innerHTML = ctaHTML('Paiement en cours…');
+    /* Le WEBHOOK (re-vérifié serveur) fait foi. Le poll de confirmation est lancé
+       INDÉPENDAMMENT du callback success du widget — souvent NON émis (sandbox / popup
+       fermée), ce qui laissait la page bloquée. Il redirige vers la confirmation dès que
+       le dossier passe à SOU. paid=true si le widget a signalé le succès → fallback /suivi
+       si le webhook tarde au-delà du budget. settled = redirection unique (anti-double). */
+    var settled = false, paid = false;
+    function finish(path) { if (settled) { return; } settled = true; AT.navigateTo(path); }
     AT.kkiapay.launch(desc, {
-      success: function () {
-        cta.innerHTML = ctaHTML('Confirmation en cours…');
-        AT.kkiapay.pollDossierStatus(['SOU'], function (confirmed) {
-          /* timeout file webhook : le suivi reste la source d'information */
-          AT.navigateTo(confirmed ? target : '/suivi');
-        });
-      },
+      success: function () { paid = true; cta.innerHTML = ctaHTML('Confirmation en cours…'); },
       failed: function () {
+        settled = true;
         alert('Le paiement a été refusé ou annulé. Aucun montant n\'a été débité.');
         syncCta();
       },
       unavailable: function () {
+        settled = true;
         alert('Le service de paiement est momentanément indisponible. Réessayez ou choisissez le canal virement.');
         syncCta();
       }
     });
+    AT.kkiapay.pollDossierStatus(['SOU'], function (confirmed) {
+      if (confirmed) { finish(target); }
+      else if (paid) { finish('/suivi'); }  /* succès signalé mais webhook lent → suivi */
+    }, 100);  /* 100 × 3 s = 5 min : couvre la latence webhook même si success non émis */
   }
 
   function syncCta() {
