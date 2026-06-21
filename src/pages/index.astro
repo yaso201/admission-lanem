@@ -65,6 +65,9 @@ const etape = await getEntry('etapes', 'formation');
   .session-card.is-selected .radio-mark { background: var(--violet); border-color: var(--violet); }
   .session-card.is-selected .radio-mark svg { opacity: 1; transform: scale(1); }
   .prog-choice { margin-top: 8px; font-size: var(--text-sm); color: var(--text-secondary); font-weight: 500; }
+  /* Taille du select formations : 16px mobile (plancher anti-zoom iOS) → 17px desktop. */
+  #programme { font-size: var(--text-base); }
+  @media (min-width: 768px) { #programme { font-size: var(--text-md); } }
 
   /* ---- Note rassurante (de A) ---- */
   .reassure { margin-top: var(--space-6); display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); background: var(--clay-soft); border: 1px solid #F4DFC8; border-radius: var(--radius-md); }
@@ -280,6 +283,7 @@ const etape = await getEntry('etapes', 'formation');
 </div>
 
 <script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline src="/scripts/programme-options.js"></script>
 <script is:inline>
 /* LOT F (F8) — programmes et sessions RÉELS (list_programmes / list_sessions) :
    le ctx.session transmis au tunnel est un id de session back valide, et les
@@ -327,8 +331,8 @@ const etape = await getEntry('etapes', 'formation');
     return p.length === 3 ? parseInt(p[2], 10) + ' ' + MOIS[parseInt(p[1], 10) - 1] + ' ' + p[0] : iso;
   }
   function parcoursLabel(){
-    var opt = sel.options[sel.selectedIndex];
-    return opt ? opt.textContent.split('—')[0].trim() : '';
+    var pr = progByCode[sel.value];
+    return pr ? (pr.label || '') : '';
   }
   function sessionLabel(){
     for (var i = 0; i < sessions.length; i++) {
@@ -500,14 +504,21 @@ const etape = await getEntry('etapes', 'formation');
       syncRecap();
       return;
     }
-    progs.forEach(function (pr, i) {
-      progByCode[pr.code] = pr;
-      var o = document.createElement('option');
-      o.value = pr.code;
-      /* titre + partenaire (vide → LaNEM) ; double-diplo → suffixe d'affinité */
-      o.textContent = pr.label + ' — ' + (pr.partner || 'LaNEM') + (pr.dd_affinity ? ' · ' + pr.dd_affinity : '');
-      if (i === 0) { o.selected = true; }
-      sel.appendChild(o);
+    progs.forEach(function (pr) { progByCode[pr.code] = pr; });
+    /* Groupement par parcours + tri + texte enrichi (logique pure testée). */
+    var groups = window.ProgrammeOptions.buildProgrammeGroups(progs);
+    var first = true;
+    groups.forEach(function (g) {
+      var og = document.createElement('optgroup');
+      og.label = g.label;
+      g.options.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.text;
+        if (first) { o.selected = true; first = false; }
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
     });
     loadSessions();
   });
