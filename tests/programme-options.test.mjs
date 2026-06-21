@@ -57,12 +57,44 @@ test('parcours inconnu → groupe « Autres » en dernier', () => {
   assert.equal(g[g.length - 1].label, 'Autres');
 });
 
-test('entrée vide → []', () => {
+test('entrée vide / null / undefined → []', () => {
   assert.deepEqual(build([]), []);
   assert.deepEqual(build(undefined), []);
+  assert.deepEqual(build(null), []);
 });
 
 test('label manquant → fallback sur le code', () => {
   const g = build([{ code: 'ZZ', label: '', parcours: 'Licence', partner: '', location: 'Cotonou', dd_affinity: '' }]);
   assert.equal(g[0].options[0].text, 'ZZ');
+});
+
+test('partenaire « LaNEM » littéral masqué (insensible à la casse)', () => {
+  const lic = build([
+    { code: 'A', label: 'Licence Droit',   parcours: 'Licence', partner: 'LaNEM', location: 'Cotonou', dd_affinity: '' },
+    { code: 'B', label: 'Licence Gestion', parcours: 'Licence', partner: 'lanem', location: 'Cotonou', dd_affinity: '' }
+  ]).find(x => x.label === 'Licence');
+  assert.ok(lic.options.every(o => !/lanem/i.test(o.text)), 'aucune ligne ne doit contenir LaNEM');
+});
+
+test('titre == mot de parcours seul → label conservé (fallback strip vide)', () => {
+  const g = build([{ code: 'X', label: 'Licence', parcours: 'Licence', partner: '', location: 'Cotonou', dd_affinity: '' }]);
+  assert.equal(g[0].options[0].text, 'Licence');
+});
+
+test('tri insensible aux accents (Écologie avant Informatique)', () => {
+  const lic = build([
+    { code: 'I', label: 'Licence Informatique', parcours: 'Licence', partner: '', location: 'Cotonou', dd_affinity: '' },
+    { code: 'E', label: 'Licence Écologie',      parcours: 'Licence', partner: '', location: 'Cotonou', dd_affinity: '' }
+  ]).find(x => x.label === 'Licence');
+  assert.deepEqual(lic.options.map(o => o.text), ['Écologie', 'Informatique']);
+});
+
+test('plusieurs parcours inconnus → un seul groupe « Autres »', () => {
+  const g = build([
+    { code: 'A', label: 'Mastère Spécialisé', parcours: 'MS',  partner: '', location: 'Cotonou', dd_affinity: '' },
+    { code: 'B', label: 'MBA Executive',       parcours: 'MBA', partner: '', location: 'Cotonou', dd_affinity: '' }
+  ]);
+  const autres = g.filter(x => x.label === 'Autres');
+  assert.equal(autres.length, 1);
+  assert.equal(autres[0].options.length, 2);
 });

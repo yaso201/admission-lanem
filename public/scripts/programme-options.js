@@ -46,7 +46,8 @@
   function optionText(prog, showLocation) {
     var parts = [shortTitle(prog)];
     var partner = trimStr(prog.partner);
-    if (partner && partner !== 'LaNEM') { parts.push(partner); }
+    /* Insensible à la casse : « lanem »/« LANEM » saisis côté back ne doivent pas réapparaître. */
+    if (partner && partner.toLowerCase() !== 'lanem') { parts.push(partner); }
     var loc = trimStr(prog.location);
     if (showLocation && loc) { parts.push(loc); }
     if (prog.parcours === 'Double-Diplomation') {
@@ -78,6 +79,7 @@
       });
     }
     var groups = [];
+    /* Tri NUMÉRIQUE des index de groupe (Object.keys ordonnerait « 10 » avant « 2 »). */
     var order = Object.keys(buckets).map(Number).sort(function (a, b) { return a - b; });
     for (var j = 0; j < order.length; j++) {
       var gi2 = order[j];

@@ -340,7 +340,8 @@ const etape = await getEntry('etapes', 'formation');
     }
     return '—';
   }
-  /* Label de choix : titre · parcours · partenaire (vide → LaNEM) · lieu */
+  /* Label de choix SOUS le select (≠ texte des <option>) : titre · parcours · partenaire (vide → LaNEM) · lieu.
+     LaNEM est volontairement conservé ICI, contrairement aux lignes du select où il est masqué. */
   function updateChoiceLabel(){
     var el = document.getElementById('prog-choice');
     if (!el) { return; }
