@@ -5,3 +5,6 @@ dist/
 *.log
 .env
 .env.*
+
+# monorepo = pnpm : pas de lockfile npm
+package-lock.json
