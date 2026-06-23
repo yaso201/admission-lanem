@@ -519,7 +519,10 @@
   function pollDossierStatus(expect, cb, tries) {
     tries = tries == null ? 40 : tries;  /* 40 × 3 s = 2 min */
     realGetDossier(function (res) {
-      var st = res.ok && res.data && res.data.status;
+      /* get_dossier renvoie le statut sous la clé `statut` (cf. _serialize_dossier) ;
+         lire `status` (anglais) donnait undefined → SOU/INS jamais détecté, confirmation
+         de paiement jamais affichée. */
+      var st = res.ok && res.data && res.data.statut;
       if (st && expect.indexOf(st) !== -1) { cb(true); return; }
       if (tries <= 0) { cb(false); return; }
       setTimeout(function () { pollDossierStatus(expect, cb, tries - 1); }, 3000);
