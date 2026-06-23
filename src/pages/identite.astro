@@ -572,6 +572,15 @@ const etape = await getEntry('etapes', 'identite');
       consent_cgv: el.consentCgv.checked,
       bourses_demandees: ctx.bourses ? ctx.bourses.split(',').filter(Boolean) : []
     };
+    /* Palier 1 : snapshot identité (durable) — la phase OTP est restaurée pré-remplie
+       si l'onglet est purgé au retour de l'app mail. */
+    if (AT.saveIdentiteSnapshot) {
+      AT.saveIdentiteSnapshot({
+        prenom: el.prenom.value.trim(), nom: el.nom.value.trim(),
+        email: el.email.value.trim(), tel: el.tel.value.trim(),
+        niveau: el.niveau.value, datebac: el.datebac.value
+      });
+    }
     AT.api.createDossier(payload, function (res) {
       if (res.ok) {
         requestCode(function () { enterOtpPhase(true); });
@@ -583,11 +592,20 @@ const etape = await getEntry('etapes', 'identite');
     });
   });
 
-  /* ---- Reprise sur la page (dossier déjà créé dans cette session) ---- */
+  /* ---- Reprise durable (localStorage, palier 1) — survit à la purge d'onglet ---- */
   if (AT.getDossierId() && AT.getDossierToken()) {
-    el.otpDest.textContent = 'votre adresse e-mail';
+    var snap = AT.getIdentiteSnapshot && AT.getIdentiteSnapshot();
+    if (snap) {
+      el.prenom.value = snap.prenom || ''; el.nom.value = snap.nom || '';
+      el.email.value = snap.email || ''; el.tel.value = snap.tel || '';
+      el.datebac.value = snap.datebac || '';
+      el.otpDest.textContent = snap.email || 'votre adresse e-mail';
+      el.telDest.textContent = snap.tel || '—';
+    } else {
+      el.otpDest.textContent = 'votre adresse e-mail';
+    }
     enterOtpPhase(false);
-    otpMessage('', 'Un dossier est déjà en cours. Demandez un code pour continuer.');
+    otpMessage('', 'Saisissez le code reçu par e-mail pour continuer — il reste valable quelques minutes. Sinon, demandez-en un nouveau.');
   } else {
     loadNiveaux();
   }

@@ -213,12 +213,38 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     });
   });
 
+  /* Palier 3-modifié : OTP pré-saisi depuis le lien → vérification automatique.
+     Déclenchée ICI (au chargement réel, par le JS) en POST — jamais sur le GET de
+     la page : immunise contre le préchargement par les scanners de mail. Repli
+     gracieux si le code du lien est expiré/déjà consommé. */
+  function autoVerify() {
+    msg(otpMsg, '', 'Vérification automatique…');
+    AT.api.verifyOtp('email', digits.map(function (d) { return d.value; }).join(''), function (res) {
+      if (res.ok) { msg(otpMsg, 'ok', 'Vérifié. Reprise de votre dossier…'); routeByStatus(); return; }
+      digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
+      resendWait.hidden = true; btnResend.hidden = false;
+      if (res.error && res.error.code === 'OTP_EXPIRED') {
+        msg(otpMsg, 'error', 'Lien expiré. Demandez un nouveau code ci-dessous.');
+      } else {
+        msg(otpMsg, '', 'Saisissez le code reçu par e-mail pour reprendre.');
+      }
+      if (digits[0]) { digits[0].focus(); }
+    });
+  }
+
   /* ---- Aiguillage : lien tokenisé (mode A) ou recherche (mode B) ---- */
   var adopted = AT.adoptFromUrl();
   if (adopted || (AT.getDossierId() && AT.getDossierToken())) {
     cardOtp.hidden = false;
     document.getElementById('dossier-pill').textContent = AT.getDossierId();
-    if (adopted) { sendCode(); } else {
+    var preOtp = AT.consumeAdoptedOtp ? AT.consumeAdoptedOtp() : null;
+    if (preOtp && /^\d{6}$/.test(preOtp)) {
+      preOtp.split('').forEach(function (c, j) {
+        if (digits[j]) { digits[j].value = c; digits[j].classList.add('is-filled'); }
+      });
+      autoVerify();
+    } else if (adopted) { sendCode(); }
+    else {
       resendWait.hidden = true;
       btnResend.hidden = false;
       msg(otpMsg, '', 'Demandez un code pour reprendre votre dossier.');

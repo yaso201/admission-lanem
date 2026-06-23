@@ -65,23 +65,33 @@
     window.location.href = buildUrl(path, extra);
   }
 
-  /* ---------- Ancrage ID + TOKEN (sessionStorage) ---------- */
-
-  var SS_ID = 'emela.admission.dossier_id';
-  var SS_TOKEN = 'emela.admission.token';
+  /* ---------- Ancrage ID + TOKEN (localStorage, fenêtre bornée) ----------
+     Palier 1 : localStorage SURVIT à la purge d'onglet mobile / relance de
+     processus (cause racine du « la page se réinitialise » après passage à l'app
+     mail). La borne `exp` limite l'exposition sur appareil PARTAGÉ (cybercafé) :
+     le dossier n'est pas repris indéfiniment ; clearDossier() purge au terme. */
+  var LS_KEY = 'emela.admission.resume';
+  var LS_SNAP = 'emela.admission.identite';
+  var RESUME_WINDOW_MS = 30 * 60 * 1000;   /* 30 min */
 
   function saveDossier(id, token) {
-    try { sessionStorage.setItem(SS_ID, id); sessionStorage.setItem(SS_TOKEN, token); } catch (e) {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ id: id, token: token, exp: Date.now() + RESUME_WINDOW_MS })); } catch (e) {}
   }
-  function getDossierId() {
-    try { return sessionStorage.getItem(SS_ID) || ''; } catch (e) { return ''; }
+  function _readResume() {
+    try {
+      var o = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (!o || !o.id || !o.token) { return null; }
+      if (o.exp && Date.now() > o.exp) { localStorage.removeItem(LS_KEY); return null; }
+      return o;
+    } catch (e) { return null; }
   }
-  function getDossierToken() {
-    try { return sessionStorage.getItem(SS_TOKEN) || ''; } catch (e) { return ''; }
-  }
+  function getDossierId() { var o = _readResume(); return o ? o.id : ''; }
+  function getDossierToken() { var o = _readResume(); return o ? o.token : ''; }
   function clearDossier() {
-    try { sessionStorage.removeItem(SS_ID); sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+    try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_SNAP); } catch (e) {}
   }
+  function saveIdentiteSnapshot(o) { try { localStorage.setItem(LS_SNAP, JSON.stringify(o)); } catch (e) {} }
+  function getIdentiteSnapshot() { try { return JSON.parse(localStorage.getItem(LS_SNAP) || 'null'); } catch (e) { return null; } }
 
   /* ---------- Appels HTTP réels (actifs si USE_REAL_API) ---------- */
 
@@ -271,20 +281,25 @@
     }
   }
 
-  /* LOT F (F4) : adoption du lien tokenisé des mails (/reprise?dossier=&token=). */
+  /* LOT F (F4) : adoption du lien tokenisé des mails (/reprise?dossier=&token=[&otp=]).
+     Palier 3-modifié : l'e-mail OTP porte aussi &otp= → reprise « un tap » (code
+     pré-saisi). L'OTP capté est consommé une seule fois via consumeAdoptedOtp(). */
+  var _adoptedOtp = null;
   function adoptFromUrl() {
     var p = new URLSearchParams(location.search);
-    var id = p.get('dossier'), tok = p.get('token');
+    var id = p.get('dossier'), tok = p.get('token'), otp = p.get('otp');
     if (id && tok) {
       saveDossier(id, tok);
-      /* Le token ne doit PAS rester dans l'historique navigateur. */
-      p.delete('token');
+      _adoptedOtp = otp || null;   /* reflète CET URL ; pas de fuite d'un OTP périmé */
+      /* token ET otp ne doivent JAMAIS rester dans l'historique/URL (fuite Referer/logs). */
+      p.delete('token'); p.delete('otp');
       var qs = p.toString();
       try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch (e) {}
       return true;
     }
     return false;
   }
+  function consumeAdoptedOtp() { var o = _adoptedOtp; _adoptedOtp = null; return o; }
 
   function realVerifyOtp(channel, code, cb) {
     _post('public.verify_otp', {
@@ -538,6 +553,7 @@
       listProgrammes: listProgrammes
     },
     adoptFromUrl: adoptFromUrl,
+    consumeAdoptedOtp: consumeAdoptedOtp,
     fmtXOF: fmtXOF,
     /* LOT KKIAPAY : widget + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
     kkiapay: { launch: launchKkiapay, pollDossierStatus: pollDossierStatus },
@@ -555,6 +571,8 @@
     getDossierId: getDossierId,
     getDossierToken: getDossierToken,
     clearDossier: clearDossier,
+    saveIdentiteSnapshot: saveIdentiteSnapshot,
+    getIdentiteSnapshot: getIdentiteSnapshot,
     _config: {
       USE_REAL_API: USE_REAL_API,
       API_BASE: API_BASE
