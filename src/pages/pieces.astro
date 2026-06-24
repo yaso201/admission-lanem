@@ -328,6 +328,14 @@ const etape = await getEntry('etapes', 'pieces');
   /* ---- Rendu d'une pièce ---- */
   function bodyFor(p, state) {
     var body = h('div', 'doc-body');
+    if (p.code === 'identite') {
+      // Sélecteur INFORMATIONNEL (voie b PC1) : 1 seul document, 3 types acceptés. Aucune persistance,
+      // n'altère pas l'upload — le libellé reste le porteur. Aide visuelle au candidat.
+      var idsel = h('div', 'id-choices');
+      idsel.appendChild(h('span', 'doc-sub', 'Un seul document, au choix : '));
+      ['CNI', 'Passeport', 'CIP'].forEach(function (t) { idsel.appendChild(badge(null, t)); });
+      body.appendChild(idsel);
+    }
     if (state.state === 'deposee') {
       var row = h('div', 'filerow');
       var fi = svgUse('i-file', 'ico-lg fi'); fi.classList.add('fi'); row.appendChild(fi);

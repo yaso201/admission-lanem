@@ -20,12 +20,20 @@
 
   // Les trois profils. Les libellés de pièces sont la STRUCTURE validée ;
   // les intitulés exacts restent à affiner avec la Direction des Études (SPEC §8).
-  var PIECES_COMMUNES_AVANT = [
-    { id: 'cni', nom: "Pièce d'identité", sub: 'CNI ou passeport · PDF ou JPG · max 5 Mo', requis: true }
+  // ids ALIGNES sur les codes back (PIECES_BY_BAC_PROFILE) — sinon subByCode[p.code] ne resout pas
+  // les hints (D-FRONT-PIECES-12). Pieces UNIVERSELLES : tous profils, REQUISES.
+  var PIECES_UNIVERSELLES = [
+    { id: 'identite', nom: "Pièce d'identité (CNI, passeport ou CIP)", sub: 'CNI, passeport ou CIP · PDF, JPG ou PNG · 5 Mo max', requis: true },
+    { id: 'photo', nom: "Photo d'identité", sub: 'Photo récente · JPG ou PNG · 5 Mo max', requis: true },
+    { id: 'cv', nom: 'Curriculum Vitae', sub: 'PDF · 5 Mo max', requis: true },
+    { id: 'motivation', nom: 'Lettre de motivation', sub: 'PDF · 5 Mo max', requis: true }
   ];
-  var PIECES_COMMUNES_APRES = [
-    { id: 'cv', nom: 'Curriculum Vitae', sub: 'PDF · max 3 Mo', requis: true },
-    { id: 'motivation', nom: 'Lettre de motivation', sub: 'PDF · max 2 Mo', requis: false }
+  // Pieces academiques PARTAGEES par bac_attente ET bac_annee (meme liste — diplome/releve optionnels).
+  var PIECES_ATTENTE_ANNEE = [
+    { id: 'releves_terminale', nom: 'Relevés de notes de Terminale', sub: '2 derniers trimestres · PDF, JPG ou PNG · 5 Mo max', requis: true },
+    { id: 'attestation_scolarite', nom: 'Attestation de scolarité', sub: 'Terminale en cours · PDF, JPG ou PNG · 5 Mo max', requis: true },
+    { id: 'diplome_bac', nom: 'Diplôme du baccalauréat', sub: 'Optionnel à ce stade · PDF, JPG ou PNG · 5 Mo max', requis: false },
+    { id: 'releve_bac', nom: 'Relevé de notes du Bac', sub: 'Optionnel à ce stade · PDF, JPG ou PNG · 5 Mo max', requis: false }
   ];
 
   var PROFILS = {
@@ -37,8 +45,9 @@
       conditionnel: false,
       consequence: 'Candidature normale. Vous fournissez votre diplôme et votre relevé du Bac.',
       pieces: [
-        { id: 'diplome-bac', nom: 'Diplôme du Baccalauréat', sub: 'PDF · max 5 Mo', requis: true },
-        { id: 'releve-bac', nom: 'Relevé de notes du Bac', sub: 'PDF · max 5 Mo', requis: true }
+        { id: 'diplome_bac', nom: 'Diplôme du baccalauréat', sub: 'PDF, JPG ou PNG · 5 Mo max', requis: true },
+        { id: 'releve_bac', nom: 'Relevé de notes du Bac', sub: 'PDF, JPG ou PNG · 5 Mo max', requis: true },
+        { id: 'justificatifs_post_bac', nom: 'Justificatifs des années post-bac', sub: 'Fusionner en un seul fichier si plusieurs années à justifier · PDF · 5 Mo max', requis: true }
       ]
     },
     annee: {
@@ -48,9 +57,7 @@
       resume: "Vous avez passé le Bac cette année et les résultats sont publiés.",
       conditionnel: false,
       consequence: 'Candidature normale. Votre relevé de la session en cours suffit (le diplôme n’est pas encore édité).',
-      pieces: [
-        { id: 'releve-session', nom: 'Relevé de notes du Bac — session 2026', sub: 'Résultats publiés · PDF · max 5 Mo', requis: true }
-      ]
+      pieces: PIECES_ATTENTE_ANNEE
     },
     attente: {
       id: 'attente',
@@ -59,10 +66,7 @@
       resume: "Vous passez le Bac cette année et les résultats ne sont pas encore publiés.",
       conditionnel: true,
       consequence: "Candidature sous réserve d’obtention du Bac (admission conditionnelle, ACO). Vous candidatez avec vos relevés de Terminale ; le diplôme sera fourni plus tard via le complément de dossier.",
-      pieces: [
-        { id: 'releves-terminale', nom: 'Relevés de notes de Terminale', sub: '2 derniers trimestres · PDF · max 8 Mo', requis: true },
-        { id: 'attestation-scolarite', nom: 'Attestation de scolarité (Terminale)', sub: 'En cours · PDF · max 3 Mo', requis: true }
-      ]
+      pieces: PIECES_ATTENTE_ANNEE
     }
   };
 
@@ -90,10 +94,11 @@
     return publies ? PROFILS.annee : PROFILS.attente;
   }
 
-  /** Liste de pièces complète (communes + spécifiques) pour un profil. */
+  /** Liste de pièces complète (universelles + spécifiques) pour un profil — universelles d'abord
+   *  (meme ordre que le back PIECES_BY_BAC_PROFILE). */
   function piecesPour(profil) {
     if (!profil) return [];
-    return PIECES_COMMUNES_AVANT.concat(profil.pieces, PIECES_COMMUNES_APRES);
+    return PIECES_UNIVERSELLES.concat(profil.pieces);
   }
 
   var STORE_KEY = 'emela.admission.profil';
