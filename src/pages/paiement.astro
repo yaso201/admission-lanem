@@ -271,7 +271,6 @@ const etape = await getEntry('etapes', 'paiement');
           <div class="rib-row"><span class="k">BIC / SWIFT</span><span class="v mono" id="rib-bic">—</span></div>
           <div class="rib-row"><span class="k">Référence à rappeler</span><span class="v mono" id="rib-ref">—</span></div>
         </div>
-        </div>
       </div>
 
       <p class="t-caption" style="margin-top:8px;color:var(--text-tertiary)">Ces coordonnées vous seront aussi envoyées par e-mail avec le RIB officiel en PDF.</p>
@@ -337,43 +336,54 @@ const etape = await getEntry('etapes', 'paiement');
   document.getElementById('dossier-ref').textContent = dossierId || '—';
   document.getElementById('rib-ref').textContent = dossierId || '—';
 
-  /* ---- ADM-DEBT-48 : montant réel du catalogue (get_frais) ---- */
-  AT.api.getFrais(ctx.session ? { session: ctx.session } : {}, function (res) {
-    if (res.ok && res.data && res.data.frais1) {
-      var amt = AT.fmtXOF(res.data.frais1.montant_xof);
-      fraisLabel = amt + ' FCFA';
-      document.getElementById('amt-main').textContent = amt;
-      document.getElementById('amt-line').textContent = fraisLabel;
-      document.getElementById('pay-head').textContent = 'Comment régler les ' + fraisLabel + ' ?';
-      /* LOT RIB-SETTINGS : coordonnées SERVEUR (source unique) — absentes → canal virement MASQUÉ. */
-      var rib = res.data.rib;
-      if (rib) {
-        document.getElementById('rib-banque').textContent = rib.banque;
-        document.getElementById('rib-titulaire').textContent = rib.titulaire;
-        document.getElementById('rib-iban').textContent = rib.iban;
-        document.getElementById('rib-bic').textContent = rib.bic;
-      } else {
-        var sopPath = document.querySelector('.pay-path[data-path="sop"]');
-        if (sopPath) sopPath.style.display = 'none';
-        panelSop.style.display = 'none';
-        selectPath('online');
-      }
-      syncCta();
-    } else {
-      document.getElementById('amt-main').textContent = '—';
-      document.getElementById('amt-line').textContent = 'Montant indisponible';
-    }
+  /* ---- Lot 3b — garde d'étape : pièces requises incomplètes → /pieces AVANT toute initialisation
+     du paiement (amounts/RIB). TOUT l'init passe par bootPaiement, lancé seulement après cette
+     garde getDossier → pas de flash de la page paiement. Le BACK (3a) fait foi. ---- */
+  AT.api.getDossier(function (gres) {
+    var gd = (gres.ok && gres.data) || {};
+    if (AT.requisesManquantes(gd.pieces).length) { AT.navigateTo('/pieces'); return; }
+    bootPaiement();
   });
 
-  /* ---- ADM-DEBT-48 : politique de remboursement (texte légal versionné) ---- */
-  AT.api.getLegalDocuments('REFUND_POLICY', function (res) {
-    var docs = res.ok && res.data && res.data.documents;
-    var key = docs && Object.keys(docs)[0];
-    if (key) {
-      var note = document.getElementById('refund-policy-note');
-      if (note) { note.textContent = 'Politique de remboursement v' + (docs[key].version || '') + ' — ' + (docs[key].content_text || '').slice(0, 220); }
-    }
-  });
+  function bootPaiement() {
+    /* ---- ADM-DEBT-48 : montant réel du catalogue (get_frais) ---- */
+    AT.api.getFrais(ctx.session ? { session: ctx.session } : {}, function (res) {
+      if (res.ok && res.data && res.data.frais1) {
+        var amt = AT.fmtXOF(res.data.frais1.montant_xof);
+        fraisLabel = amt + ' FCFA';
+        document.getElementById('amt-main').textContent = amt;
+        document.getElementById('amt-line').textContent = fraisLabel;
+        document.getElementById('pay-head').textContent = 'Comment régler les ' + fraisLabel + ' ?';
+        /* LOT RIB-SETTINGS : coordonnées SERVEUR (source unique) — absentes → canal virement MASQUÉ. */
+        var rib = res.data.rib;
+        if (rib) {
+          document.getElementById('rib-banque').textContent = rib.banque;
+          document.getElementById('rib-titulaire').textContent = rib.titulaire;
+          document.getElementById('rib-iban').textContent = rib.iban;
+          document.getElementById('rib-bic').textContent = rib.bic;
+        } else {
+          var sopPath = document.querySelector('.pay-path[data-path="sop"]');
+          if (sopPath) sopPath.style.display = 'none';
+          panelSop.style.display = 'none';
+          selectPath('online');
+        }
+        syncCta();
+      } else {
+        document.getElementById('amt-main').textContent = '—';
+        document.getElementById('amt-line').textContent = 'Montant indisponible';
+      }
+    });
+
+    /* ---- ADM-DEBT-48 : politique de remboursement (texte légal versionné) ---- */
+    AT.api.getLegalDocuments('REFUND_POLICY', function (res) {
+      var docs = res.ok && res.data && res.data.documents;
+      var key = docs && Object.keys(docs)[0];
+      if (key) {
+        var note = document.getElementById('refund-policy-note');
+        if (note) { note.textContent = 'Politique de remboursement v' + (docs[key].version || '') + ' — ' + (docs[key].content_text || '').slice(0, 220); }
+      }
+    });
+  }
 
   function ctaHTML(label) {
     return label + '<svg class="ico"><use href="#i-caretright"/></svg>';

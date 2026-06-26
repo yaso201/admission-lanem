@@ -531,6 +531,13 @@
 
   /* ---------- Export ---------- */
 
+  /* Lot 3b — garde d'étape : pièces required encore non fournies (statut !== 'deposee',
+     aligné sur le mapping serveur uploaded/verified→deposee). Source unique consommée par
+     /pieces, /recapitulatif et /paiement (factorise reprise.astro). Le BACK (3a) fait foi. */
+  function requisesManquantes(pieces) {
+    return (pieces || []).filter(function (p) { return p.requise && p.statut !== 'deposee'; });
+  }
+
   global.AdmissionTunnel = {
     readCtx: readCtx,
     buildUrl: buildUrl,
@@ -558,6 +565,7 @@
     adoptFromUrl: adoptFromUrl,
     consumeAdoptedOtp: consumeAdoptedOtp,
     fmtXOF: fmtXOF,
+    requisesManquantes: requisesManquantes,
     /* LOT KKIAPAY : widget + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
     kkiapay: { launch: launchKkiapay, pollDossierStatus: pollDossierStatus },
     /* Hook optionnel : une page avec UI de saisie OTP peut intercepter TOKEN_EXPIRED. */

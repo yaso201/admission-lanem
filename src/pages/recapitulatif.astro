@@ -314,6 +314,8 @@ const etape = await getEntry('etapes', 'recapitulatif');
       return;
     }
     var d = res.data;
+    /* Lot 3b — garde d'étape : pièces requises incomplètes → retour à /pieces (le back 3a fait foi). */
+    if (AT.requisesManquantes(d.pieces).length) { AT.navigateTo('/pieces'); return; }
     setText('rc-programme', d.programme && d.programme.label);
     setText('rc-niveau', d.programme && d.programme.level && d.programme.level.name);
     setText('rc-session', d.session && (d.session.label + (d.session.academic_year ? ' — ' + d.session.academic_year : '')));
