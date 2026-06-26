@@ -217,7 +217,7 @@ const etape = await getEntry('etapes', 'formation');
 
       <div class="reassure">
         <svg class="ico-lg"><use href="#i-info"/></svg>
-        <p><strong>Le test d'admission</strong> évalue les prérequis de la formation. La date vous sera confirmée par email après l'étude de votre dossier — aucune inscription au test n'est requise dès maintenant.</p>
+        <p id="reassure-text">Après l'étude de votre dossier, vous serez recontacté(e) par email pour la suite (test ou entretien selon la formation).</p>
       </div>
 
       <!-- Carte récap : pièces à fournir + frais -->
@@ -266,7 +266,7 @@ const etape = await getEntry('etapes', 'formation');
 
       <div class="bourse-inelig" id="bourse-inelig" hidden>
         <svg class="ico"><use href="#i-info"/></svg>
-        <p>Cette formation n'est <strong>pas éligible aux bourses</strong> pour la session sélectionnée.</p>
+        <p id="bourse-inelig-text">Cette formation n'est <strong>pas éligible aux bourses</strong>.</p>
       </div>
     </div>
   </div>
@@ -298,6 +298,7 @@ const etape = await getEntry('etapes', 'formation');
   var recapSess = document.getElementById('recap-sess');
   var elig = document.getElementById('bourse-eligible');
   var inelig = document.getElementById('bourse-inelig');
+  var ineligTxt = document.getElementById('bourse-inelig-text');
   var sub = document.getElementById('bourse-sub');
   var hint = document.getElementById('bourse-hint');
   var toggle = document.querySelector('.bourse-toggle');
@@ -340,6 +341,25 @@ const etape = await getEntry('etapes', 'formation');
     }
     return '—';
   }
+  /* Texte « test / entretien » selon le parcours du programme choisi : Prépa => test d'admission ;
+     Licence/Bachelor/Double-Diplomation => admission sur dossier + entretien (pas de test). */
+  function updateReassure(){
+    var el = document.getElementById('reassure-text');
+    if (!el) { return; }
+    var pr = progByCode[sel.value];
+    el.textContent = '';
+    if (pr && pr.parcours === 'Prépa') {
+      var s1 = document.createElement('strong'); s1.textContent = "Le test d'admission";
+      el.appendChild(s1);
+      el.appendChild(document.createTextNode(" évalue les prérequis de la formation. La date vous sera confirmée par email après l'étude de votre dossier — aucune inscription au test n'est requise dès maintenant."));
+    } else if (pr) {
+      var s2 = document.createElement('strong'); s2.textContent = "L'admission se fait sur dossier.";
+      el.appendChild(s2);
+      el.appendChild(document.createTextNode(" Après l'étude de votre candidature, vous pourrez être convoqué(e) à un entretien — la date vous sera communiquée par email. Aucune démarche n'est requise dès maintenant."));
+    } else {
+      el.appendChild(document.createTextNode("Après l'étude de votre dossier, vous serez recontacté(e) par email pour la suite (test ou entretien selon la formation)."));
+    }
+  }
   /* Label de choix SOUS le select (≠ texte des <option>) : titre · parcours · partenaire (vide → LaNEM) · lieu.
      LaNEM est volontairement conservé ICI, contrairement aux lignes du select où il est masqué. */
   function updateChoiceLabel(){
@@ -362,11 +382,31 @@ const etape = await getEntry('etapes', 'formation');
       el.textContent = (res.ok && res.data && res.data.frais1)
         ? AT.fmtXOF(res.data.frais1.montant_xof) : '—';
       var bourses = res.ok && res.data && res.data.bourses_eligibles;
-      var eligible = !!(bourses && bourses.length);
+      /* Règle structurelle : Bachelor / Double-Diplomation jamais éligibles (gate dur),
+         même si une bourse leur est rattachée dans le miroir. Prépa / Licence : restent
+         data-driven (éligibles seulement si ≥1 bourse configurée — sinon l'étape /bourses
+         serait vide). Conjonction validée par l'architecte. */
+      var parcours = (progByCode[sel.value] || {}).parcours;
+      var parcoursBloque = (parcours === 'Bachelor' || parcours === 'Double-Diplomation');
+      var eligible = !parcoursBloque && !!(bourses && bourses.length);
       elig.hidden = !eligible;
       inelig.hidden = eligible;
       sub.style.display = eligible ? '' : 'none';
-      if (!eligible) { setToggle('non'); }
+      if (!eligible) {
+        setToggle('non');
+        if (ineligTxt) {
+          ineligTxt.textContent = '';
+          if (parcoursBloque) {
+            ineligTxt.appendChild(document.createTextNode('Les bourses LaNEM concernent les '));
+            var b1 = document.createElement('strong'); b1.textContent = 'Prépas'; ineligTxt.appendChild(b1);
+            ineligTxt.appendChild(document.createTextNode(' et les '));
+            var b2 = document.createElement('strong'); b2.textContent = 'Licences'; ineligTxt.appendChild(b2);
+            ineligTxt.appendChild(document.createTextNode(". Cette formation n'y est pas éligible."));
+          } else {
+            ineligTxt.appendChild(document.createTextNode("Aucune bourse n'est ouverte pour cette session."));
+          }
+        }
+      }
     });
   }
 
@@ -473,6 +513,7 @@ const etape = await getEntry('etapes', 'formation');
     if (recapProg) { recapProg.textContent = lbl || '—'; }
     if (recapSess) { recapSess.textContent = sessionLabel(); }
     updateChoiceLabel();
+    updateReassure();
     renderProgress();
     renderCTA();
   }
