@@ -48,6 +48,15 @@ const etape = await getEntry('etapes', 'pieces');
   .doc-list { display: flex; flex-direction: column; gap: var(--space-4); }
   .doc-item { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); overflow: hidden; }
   .doc-item.is-error { border-color: var(--error-100); }
+  /* Lot 3c-3b : pièce rejetée priorisée (bord + fond légers — le bandeau motif porte le détail) */
+  .doc-item.is-rejected { border-color: var(--error-500); }
+  /* Lot 3c-3b : bloc « j'ai re-déposé » (modèle A, SOU) */
+  .resubmit-box { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+  .resubmit-title { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); display: block; }
+  .resubmit-text { font-size: var(--text-xs); color: var(--text-secondary); display: block; margin-top: 2px; }
+  .resubmit-gate { font-size: var(--text-xs); color: var(--accent-700); font-weight: 600; }
+  .resubmit-msg { font-size: var(--text-sm); font-weight: 600; color: var(--lagoon-deep); }
+  .resubmit-msg.is-error { color: var(--error-700); }
   .doc-top { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); }
   .doc-ic { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--sand-100); color: var(--sand-600); }
   .doc-ic--done { background: var(--lagoon-soft); color: var(--lagoon-deep); }
@@ -217,6 +226,20 @@ const etape = await getEntry('etapes', 'pieces');
     </div>
 
     <div class="doc-list" id="doc-list"></div>
+
+    <!-- Lot 3c-3b : re-soumission (modèle A — le dossier reste SOU). Visible seulement en SOU ;
+         le bouton est GARDÉ (désactivé tant qu'une pièce est rejetée) mais le back garantit (409). -->
+    <div class="resubmit-box" id="resubmit-box" hidden>
+      <span>
+        <span class="resubmit-title">Vous avez re-déposé vos pièces&nbsp;?</span>
+        <span class="resubmit-text">Signalez la fin de votre re-dépôt&nbsp;: votre dossier sera re-contrôlé par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).</span>
+      </span>
+      <div>
+        <button type="button" class="em-btn em-btn--primary" id="resubmit-btn">J'ai re-déposé toutes mes pièces</button>
+      </div>
+      <span class="resubmit-gate" id="resubmit-gate"></span>
+      <div class="resubmit-msg" id="resubmit-msg" role="status" aria-live="polite" hidden></div>
+    </div>
   </div>
 </main>
 
@@ -250,9 +273,11 @@ const etape = await getEntry('etapes', 'pieces');
   var listEl = document.getElementById('doc-list');
   var gateText = document.getElementById('ab-gate-text');
   var nextBtn = document.getElementById('ab-next');
-  var pieces = [];   // état SERVEUR : [{code,label,statut,requise}]
+  var pieces = [];   // état SERVEUR : [{code,label,statut,statut_reel,reject_reason,reject_comment,requise}]
   var live = {};     // état LOCAL transitoire : code -> {state,pct,message,fileName}
   var bars = {};     // code -> élément .fill (progression sans re-render)
+  var dossierStatut = '';     // Lot 3c-3b : statut du dossier (le bloc re-soumission n'existe qu'en SOU)
+  var resubmitDone = false;   // Lot 3c-3b : garde double-clic après un signalement réussi
 
   /* Descriptions UX locales par code de pièce (catalogue front). */
   var subByCode = {};
@@ -307,7 +332,14 @@ const etape = await getEntry('etapes', 'pieces');
     AT.api.uploadPieceFile(code, file, function (res) {
       if (res.ok) {
         delete live[code];
-        pieces.forEach(function (p) { if (p.code === code) { p.statut = 'deposee'; } });
+        // Lot 3c-3b : refléter AUSSI l'état réel — le tri, le badge et le bouton « j'ai re-déposé »
+        // se recalculent au render() (une rejetée re-déposée repasse « En vérification »).
+        pieces.forEach(function (p) {
+          if (p.code === code) {
+            p.statut = 'deposee'; p.statut_reel = 'uploaded';
+            p.reject_reason = null; p.reject_comment = null;
+          }
+        });
       } else if (res.error && res.error.code === 'OTP_RESENT') {
         AT.navigateTo('/reprise');
         return;
@@ -326,6 +358,17 @@ const etape = await getEntry('etapes', 'pieces');
   }
 
   /* ---- Rendu d'une pièce ---- */
+  /* Zone de dépôt (partagée attente / rejetée — Lot 3c-3b). */
+  function dropZone(p) {
+    var drop = h('label', 'em-file-drop');
+    drop.appendChild(fileInput(p.code));
+    var ic = h('span', 'em-file-drop-icon'); ic.appendChild(svgUse('i-upload', 'ico-lg ico-26')); drop.appendChild(ic);
+    var title = h('span', 'em-file-drop-title', 'Prenez une photo ou ');
+    title.appendChild(h('span', 'lnk', 'parcourez vos fichiers'));
+    drop.appendChild(title);
+    drop.appendChild(h('span', 'em-file-drop-hint', subByCode[p.code] || 'PDF, JPG ou PNG — 5 Mo max.'));
+    return drop;
+  }
   function bodyFor(p, state) {
     var body = h('div', 'doc-body');
     if (p.code === 'identite') {
@@ -336,12 +379,39 @@ const etape = await getEntry('etapes', 'pieces');
       ['CNI', 'Passeport', 'CIP'].forEach(function (t) { idsel.appendChild(badge(null, t)); });
       body.appendChild(idsel);
     }
+    if (state.state === 'verified') {
+      // Lot 3c-3b : VÉRIFIÉE = acquise, figée — PAS de « Remplacer » (le back refuse :
+      // PIECE_ALREADY_VERIFIED). Fix UX préexistant : avant, le bouton menait à une erreur.
+      var vrow = h('div', 'filerow');
+      var vfi = svgUse('i-check', 'ico-lg fi'); vfi.classList.add('fi'); vrow.appendChild(vfi);
+      var vb = h('span', 'filerow-body');
+      vb.appendChild(h('span', 'filerow-name', 'Pièce vérifiée'));
+      vb.appendChild(h('span', 'filerow-meta', 'Vérifiée par le service des admissions — acquise, rien à faire.'));
+      vrow.appendChild(vb);
+      body.appendChild(vrow);
+      return body;
+    }
+    if (state.state === 'rejected') {
+      // Lot 3c-3b : REJETÉE = motif (le candidat sait POURQUOI) + zone de re-dépôt.
+      var motif = p.reject_reason || '';
+      if (p.reject_comment) { motif += (motif ? ' — ' : '') + p.reject_comment; }
+      var rj = h('div', 'uperror');
+      rj.setAttribute('role', 'alert');
+      rj.appendChild(svgUse('i-warning', 'ico-lg'));
+      var rjb = h('span', 'uperror-body');
+      rjb.appendChild(h('span', 'uperror-title', 'Pièce refusée' + (motif ? ' : ' + motif : '') + '.'));
+      rjb.appendChild(h('span', 'uperror-text', 'Re-déposez une nouvelle version ci-dessous — sans frais supplémentaires.'));
+      rj.appendChild(rjb);
+      body.appendChild(rj);
+      body.appendChild(dropZone(p));
+      return body;
+    }
     if (state.state === 'deposee') {
       var row = h('div', 'filerow');
       var fi = svgUse('i-file', 'ico-lg fi'); fi.classList.add('fi'); row.appendChild(fi);
       var rb = h('span', 'filerow-body');
       rb.appendChild(h('span', 'filerow-name', 'Pièce enregistrée'));
-      rb.appendChild(h('span', 'filerow-meta', 'Reçue par le service des admissions.'));
+      rb.appendChild(h('span', 'filerow-meta', 'Reçue — en attente de vérification par le service des admissions.'));
       row.appendChild(rb);
       var actions = h('span', 'filerow-actions');
       var replaceBtn = h('button', 'em-btn em-btn--secondary em-btn--sm', 'Remplacer');
@@ -386,29 +456,42 @@ const etape = await getEntry('etapes', 'pieces');
       err.appendChild(eb);
       body.appendChild(err);
     } else {
-      var drop = h('label', 'em-file-drop');
-      drop.appendChild(fileInput(p.code));
-      var ic = h('span', 'em-file-drop-icon'); ic.appendChild(svgUse('i-upload', 'ico-lg ico-26')); drop.appendChild(ic);
-      var title = h('span', 'em-file-drop-title', 'Prenez une photo ou ');
-      title.appendChild(h('span', 'lnk', 'parcourez vos fichiers'));
-      drop.appendChild(title);
-      drop.appendChild(h('span', 'em-file-drop-hint', subByCode[p.code] || 'PDF, JPG ou PNG — 5 Mo max.'));
-      body.appendChild(drop);
+      body.appendChild(dropZone(p));
     }
     return body;
   }
 
+  /* Lot 3c-3b : état RÉEL 4-états, avec repli binaire si le back ne sert pas encore statut_reel
+     (déploiement mixte back/front — le warn signale un déploiement incohérent sans casser). */
+  function etatReel(p) {
+    if (p.statut_reel) { return p.statut_reel; }
+    try { console.warn('[3c-3b] statut_reel absent — repli binaire (' + p.code + ')'); } catch (e) {}
+    return p.statut === 'deposee' ? 'uploaded' : 'missing';
+  }
   function stateFor(p) {
     if (live[p.code]) { return live[p.code]; }
-    return { state: p.statut === 'deposee' ? 'deposee' : 'attente' };
+    var sr = etatReel(p);
+    if (sr === 'verified') { return { state: 'verified' }; }
+    if (sr === 'rejected') { return { state: 'rejected' }; }
+    return { state: sr === 'uploaded' ? 'deposee' : 'attente' };
+  }
+  /* Priorisation d'affichage : à-refaire d'abord, acquises en bas (tri stable). */
+  function rangFor(p) {
+    var sr = etatReel(p);
+    if (sr === 'rejected') { return 0; }
+    if (sr === 'missing') { return p.requise ? 1 : 2; }
+    if (sr === 'uploaded') { return 3; }
+    return 4; // verified
   }
 
   function render() {
     bars = {};
     listEl.textContent = '';
-    pieces.forEach(function (p) {
+    // Lot 3c-3b : priorisation — Rejetées → À fournir → En vérification → Vérifiées (tri stable).
+    var ordered = pieces.slice().sort(function (a, b) { return rangFor(a) - rangFor(b); });
+    ordered.forEach(function (p) {
       var state = stateFor(p);
-      var item = h('div', 'doc-item' + (state.state === 'error' ? ' is-error' : ''));
+      var item = h('div', 'doc-item' + (state.state === 'error' ? ' is-error' : '') + (state.state === 'rejected' ? ' is-rejected' : ''));
       var top = h('div', 'doc-top');
       var icCls = state.state === 'deposee' ? 'doc-ic doc-ic--done'
         : state.state === 'progress' ? 'doc-ic doc-ic--active'
@@ -426,10 +509,12 @@ const etape = await getEntry('etapes', 'pieces');
       info.appendChild(h('span', 'doc-sub', subByCode[p.code] || ''));
       top.appendChild(info);
       var st = h('span', 'doc-status');
-      if (state.state === 'deposee') { st.appendChild(badge('success', 'Envoyée')); }
+      if (state.state === 'verified') { st.appendChild(badge('success', 'Vérifiée')); }
+      else if (state.state === 'rejected') { st.appendChild(badge('error', 'Rejetée')); }
+      else if (state.state === 'deposee') { st.appendChild(badge('info', 'En vérification')); }
       else if (state.state === 'progress') { st.appendChild(badge('info', 'Envoi…')); }
       else if (state.state === 'error') { st.appendChild(badge('error', 'Échec')); }
-      else { st.appendChild(badge(null, 'En attente')); }
+      else { st.appendChild(badge(null, p.requise ? 'À fournir' : 'En attente')); }
       top.appendChild(st);
       item.appendChild(top);
       item.appendChild(bodyFor(p, state));
@@ -437,7 +522,8 @@ const etape = await getEntry('etapes', 'pieces');
     });
 
     var req = pieces.filter(function (p) { return p.requise; });
-    var done = req.filter(function (p) { return stateFor(p).state === 'deposee'; }).length;
+    // Lot 3c-3b : une VÉRIFIÉE compte « envoyée » (non-régression du compteur avec le 4-états).
+    var done = req.filter(function (p) { var s = stateFor(p).state; return s === 'deposee' || s === 'verified'; }).length;
     var total = req.length;
     var remaining = total - done;
     document.getElementById('sum-done').textContent = done;
@@ -455,7 +541,52 @@ const etape = await getEntry('etapes', 'pieces');
       nextBtn.setAttribute('aria-disabled', 'false');
       nextBtn.onclick = function () { AT.navigateTo('/recapitulatif'); };
     }
+
+    renderResubmit();
   }
+
+  /* Lot 3c-3b : bloc « j'ai re-déposé » — SOU uniquement. Le front GUIDE (désactivé avec
+     compteur tant qu'une pièce est rejetée) ; le back GARANTIT (409 PIECES_REJECTED_PENDING). */
+  function renderResubmit() {
+    var box = document.getElementById('resubmit-box');
+    if (!box) { return; }
+    if (dossierStatut !== 'SOU') { box.hidden = true; return; }
+    box.hidden = false;
+    var btn = document.getElementById('resubmit-btn');
+    var gate = document.getElementById('resubmit-gate');
+    if (resubmitDone) {
+      btn.setAttribute('disabled', ''); btn.setAttribute('aria-disabled', 'true');
+      gate.textContent = '';
+      return;
+    }
+    var rejetees = pieces.filter(function (p) { return etatReel(p) === 'rejected'; }).length;
+    if (rejetees > 0) {
+      btn.setAttribute('disabled', ''); btn.setAttribute('aria-disabled', 'true');
+      gate.textContent = 'Re-déposez d’abord les pièces rejetées (' + rejetees + ' restante' + (rejetees > 1 ? 's' : '') + ').';
+    } else {
+      btn.removeAttribute('disabled'); btn.setAttribute('aria-disabled', 'false');
+      gate.textContent = '';
+    }
+  }
+  document.getElementById('resubmit-btn').addEventListener('click', function () {
+    var btn = this;
+    var msg = document.getElementById('resubmit-msg');
+    btn.setAttribute('disabled', '');                       // garde double-clic
+    msg.hidden = false; msg.classList.remove('is-error'); msg.textContent = 'Envoi…';
+    AT.api.candidateResubmit(function (res) {
+      if (res.ok) {
+        resubmitDone = true;
+        msg.textContent = 'Merci — votre dossier sera re-contrôlé par le service des admissions, sans frais supplémentaires.';
+        renderResubmit();
+      } else if (res.error && res.error.code === 'OTP_RESENT') {
+        AT.navigateTo('/reprise');
+      } else {
+        btn.removeAttribute('disabled');
+        msg.classList.add('is-error');
+        msg.textContent = (res.error && res.error.message) || 'Signalement impossible. Réessayez.';
+      }
+    });
+  });
 
   function showBlocked(message) {
     listEl.textContent = '';
@@ -487,6 +618,7 @@ const etape = await getEntry('etapes', 'pieces');
     }
     var d = res.data;
     pieces = d.pieces || [];
+    dossierStatut = d.statut || '';   // Lot 3c-3b : conditionne le bloc re-soumission (SOU only)
     document.getElementById('pb-dossier').textContent = 'Dossier ' + d.dossier_id;
     var profilId = String(d.profil_bac || '').replace(/^bac_/, '');
     var profil = AP.PROFILS[profilId];

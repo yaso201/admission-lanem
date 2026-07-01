@@ -248,6 +248,15 @@
     }, cb);
   }
 
+  /* Lot 3c-3b : « j'ai fini de re-déposer » (modèle A — le dossier RESTE SOU, aucune transition).
+     Le back garde : 409 PIECES_REJECTED_PENDING s'il reste une pièce rejetée. */
+  function realCandidateResubmit(cb) {
+    _post('public.candidate_resubmit', {
+      dossier_id: getDossierId(),
+      token: getDossierToken()
+    }, cb);
+  }
+
   /* LOT F (F4) : « retrouver mon dossier » — réponse UNIFORME côté back (anti-énumération). */
   function realRecoverDossier(email, cb) {
     _post('public.recover_dossier', { email: email }, cb);
@@ -553,6 +562,7 @@
       classifyBac: realClassifyBac,
       uploadPieceFile: realUploadPieceFile,
       resubmitComplement: realResubmitComplement,
+      candidateResubmit: realCandidateResubmit,
       recoverDossier: realRecoverDossier,
       requestDataDeletion: realRequestDataDeletion,
       enrollmentPay: realEnrollmentPay,

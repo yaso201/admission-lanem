@@ -54,6 +54,11 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   .doc-row .st { margin-left: auto; font-size: var(--text-xs); color: var(--lagoon-deep); font-weight: 600; text-align: right; }
   .doc-row.is-await .ck { background: var(--accent-100); color: var(--accent-700); }
   .doc-row.is-await .st { color: var(--accent-700); }
+  /* Lot 3c-3b : miroir 4-états — rejetée (rouge + motif) / en vérification (neutre) */
+  .doc-row.is-rejected .ck { background: var(--error-50); color: var(--error-700); }
+  .doc-row.is-rejected .st { color: var(--error-700); }
+  .doc-row.is-verif .ck { background: var(--border-default); color: var(--text-secondary); }
+  .doc-row.is-verif .st { color: var(--text-secondary); }
 
   .ro-note { margin-top: var(--space-7); display: flex; gap: var(--space-3); align-items: center; justify-content: center; font-size: var(--text-xs); color: var(--text-tertiary); text-align: center; }
   .ro-note svg { flex-shrink: 0; }
@@ -123,6 +128,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   <symbol id="i-cal" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V96H208ZM72,64H48V48H72Zm120,0H184V48h8Z"/></symbol>
   <symbol id="i-flag" viewBox="0 0 256 256"><path d="M42.76,50.78A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.36,0,27.27-4.34,41.49-16.78A8,8,0,0,0,232,177V64a8,8,0,0,0-13.27-6C187.94,84.69,165.66,73.66,139.55,60.74,112.66,47.43,82.21,32.37,42.76,50.78Z"/></symbol>
   <symbol id="i-clock" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.13,104.13,0,0,0,128,24Zm56,112H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48a8,8,0,0,1,0,16Z"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 256 256"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z"/></symbol>
   <symbol id="i-lock" viewBox="0 0 256 256"><path d="M208,80H172V52a44,44,0,0,0-88,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM100,52a28,28,0,0,1,56,0V80H100Zm28,128a16,16,0,1,1,16-16A16,16,0,0,1,128,180Z"/></symbol>
   <symbol id="i-cap" viewBox="0 0 256 256"><path d="M251.76,88.94l-120-64a8,8,0,0,0-7.52,0l-120,64a8,8,0,0,0,0,14.12L32,117.87v48.42a15.91,15.91,0,0,0,4.06,10.65C49.16,191.53,78.51,216,128,216a130,130,0,0,0,48-8.76V240a8,8,0,0,0,16,0V199.51a115.63,115.63,0,0,0,27.94-22.57A15.91,15.91,0,0,0,224,166.29V117.87l27.76-14.81a8,8,0,0,0,0-14.12ZM128,200c-43.27,0-68.72-21.14-80-33.71V126.4l76.24,40.66a8,8,0,0,0,7.52,0L176,143.47v46.34C163.4,195.69,147.52,200,128,200Zm80-33.75a97.83,97.83,0,0,1-16,14.25V134.93l16-8.53ZM128,150.93,25,96,128,41.07,231,96Z"/></symbol>
   <symbol id="i-upload" viewBox="0 0 256 256"><path d="M216,144v64a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H200V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z"/></symbol>
@@ -321,6 +327,32 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
         }
       });
     });
+    return card;
+  }
+
+  /* ---- SOU (Lot 3c-3b) : pièces à corriger/fournir après contrôle documentaire (modèle A —
+     le dossier RESTE SOU). Carte visible SEULEMENT s'il reste des rejetées ou des à-fournir
+     (GB1) ; le re-dépôt et le signalement se font sur /pieces. ---- */
+  function buildSouCorrections(d) {
+    var pieces = d.pieces || [];
+    var rejetees = pieces.filter(function (p) { return p.statut_reel === 'rejected'; });
+    var aFournir = pieces.filter(function (p) { return p.statut_reel === 'missing' && p.requise; });
+    if (!rejetees.length && !aFournir.length) { return null; }   // dossier sain → pas de carte
+    var card = actionCard({
+      icon: 'i-warning', kicker: 'Pièces à corriger · SOU',
+      title: 'Des pièces de votre dossier sont à corriger ou à fournir',
+      text: 'Après contrôle, certaines pièces doivent être refaites ou complétées — sans frais supplémentaires (aucun nouveau paiement). Le détail figure dans la liste ci-dessous.'
+    });
+    var steps = h('div', 'aco-steps');
+    var s1 = h('span', 'aco-step'); s1.appendChild(svgUse('i-upload', 'ico-sm'));
+    var t1 = h('span'); t1.appendChild(document.createTextNode('Re-déposez les pièces indiquées depuis la page '));
+    var a1 = h('a', null, 'Pièces justificatives'); a1.href = '/pieces';
+    t1.appendChild(a1); t1.appendChild(document.createTextNode('.'));
+    s1.appendChild(t1); steps.appendChild(s1);
+    var s2 = h('span', 'aco-step'); s2.appendChild(svgUse('i-check', 'ico-sm'));
+    s2.appendChild(h('span', null, 'Une fois toutes les pièces re-déposées, signalez-le depuis cette même page — votre dossier sera re-contrôlé.'));
+    steps.appendChild(s2);
+    card.appendChild(steps);
     return card;
   }
 
@@ -539,15 +571,32 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   }
 
   /* ---- Documents ---- */
+  /* Lot 3c-3b : état affiché d'une pièce — 4-états réels (statut_reel + motif), avec repli
+     binaire si le back ne sert pas encore statut_reel (déploiement mixte — warn, sans casser). */
+  function etatPiece(p) {
+    var sr = p.statut_reel;
+    if (!sr) {
+      try { console.warn('[3c-3b] statut_reel absent — repli binaire (' + p.code + ')'); } catch (e) {}
+      sr = p.statut === 'deposee' ? 'uploaded' : 'missing';
+    }
+    if (sr === 'verified') { return { cls: '', icon: 'i-check', label: 'Vérifiée' }; }
+    if (sr === 'rejected') {
+      var motif = p.reject_reason || '';
+      if (p.reject_comment) { motif += (motif ? ' · ' : '') + p.reject_comment; }
+      return { cls: ' is-rejected', icon: 'i-warning', label: 'Rejetée' + (motif ? ' — ' + motif : '') };
+    }
+    if (sr === 'uploaded') { return { cls: ' is-verif', icon: 'i-clock', label: 'En vérification' }; }
+    return { cls: ' is-await', icon: 'i-clock', label: p.requise ? 'À fournir — requise' : 'Optionnelle' };
+  }
   function renderDocs(d) {
     var wrap = document.getElementById('sv-docs');
     wrap.textContent = '';
     (d.pieces || []).forEach(function (p) {
-      var ok = p.statut === 'deposee';
-      var row = h('div', 'doc-row' + (ok ? '' : ' is-await'));
-      var ck = h('span', 'ck'); ck.appendChild(svgUse(ok ? 'i-check' : 'i-clock', 'ico-sm ico-xs')); row.appendChild(ck);
+      var e = etatPiece(p);
+      var row = h('div', 'doc-row' + e.cls);
+      var ck = h('span', 'ck'); ck.appendChild(svgUse(e.icon, 'ico-sm ico-xs')); row.appendChild(ck);
       row.appendChild(h('span', 'nm', p.label));
-      row.appendChild(h('span', 'st', ok ? 'Reçue' : (p.requise ? 'Attendue — requise' : 'Optionnelle')));
+      row.appendChild(h('span', 'st', e.label));
       wrap.appendChild(row);
     });
     if ((d.pieces || []).length) { show('sv-docs-card'); }
@@ -585,6 +634,11 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 
     var action = document.getElementById('sv-action');
     if (d.statut === 'INC') { action.appendChild(buildInc(d)); }
+    else if (d.statut === 'SOU') {
+      // Lot 3c-3b : carte conditionnelle (null si rien à corriger — le message passif suffit).
+      var sou = buildSouCorrections(d);
+      if (sou) { action.appendChild(sou); }
+    }
     else if (d.statut === 'ACO') { action.appendChild(buildAco(d)); }
     else if (d.statut === 'ACC') { action.appendChild(buildAcc(d)); }
     else if (d.statut === 'REF') {
