@@ -76,7 +76,7 @@ const etape = await getEntry('etapes', 'pieces');
   .filerow-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .filerow-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .filerow-meta { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 1px; }
-  .filerow-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+  .filerow-actions { display: flex; gap: var(--space-2); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
   /* Progress (en cours) */
   .uploading { display: flex; flex-direction: column; gap: var(--space-4); }
@@ -344,8 +344,12 @@ const etape = await getEntry('etapes', 'pieces');
         AT.navigateTo('/reprise');
         return;
       } else {
-        live[code] = { state: 'error',
-          message: (res.error && res.error.message) || 'Envoi impossible. Vérifiez votre connexion et réessayez.' };
+        // A3 : distinguer coupure RÉSEAU (retry du même fichier) d'un refus FICHIER (corriger/re-choisir).
+        var netErr = res.error && (res.error.code === 'NETWORK_ERROR' || res.error.code === 'TIMEOUT');
+        live[code] = { state: 'error', retryFile: netErr ? file : null,
+          message: netErr
+            ? 'Connexion interrompue. Vérifiez votre réseau, puis réessayez.'
+            : ((res.error && res.error.message) || 'Fichier non accepté — corrigez-le puis redéposez.') };
       }
       render();
     }, function (pct) {
@@ -358,6 +362,36 @@ const etape = await getEntry('etapes', 'pieces');
   }
 
   /* ---- Rendu d'une pièce ---- */
+  /* A4 (D-UPLOAD-REVIEW-17) : bouton « Voir » — re-visualiser une pièce déposée (miroir viewPiece
+     staff). Ouvre le fichier inline (nouvel onglet) via l'endpoint gardé token+OTP. */
+  function voirBtn(p) {
+    var b = h('button', 'em-btn em-btn--secondary em-btn--sm', null);
+    b.type = 'button';
+    b.appendChild(svgUse('i-eye', 'ico-sm'));
+    var lbl = document.createTextNode('Voir');
+    b.appendChild(lbl);
+    b.addEventListener('click', function () {
+      if (b.disabled) { return; }
+      var prev = b.parentNode && b.parentNode.querySelector('.uperror-text');
+      if (prev) { prev.remove(); }
+      var win = window.open('', '_blank');   // ouvert DANS le geste → non bloqué sur mobile (cible 3G)
+      b.disabled = true; lbl.textContent = 'Ouverture…';   // état de chargement (3G : le blob met du temps)
+      AT.api.viewOwnPiece(p.code, function (res) {
+        b.disabled = false; lbl.textContent = 'Voir';
+        if (res && !res.ok) {
+          var code = res.error && res.error.code;
+          if (code === 'OTP_REQUIRED' || code === 'TOKEN_EXPIRED' || code === 'OTP_RESENT') {
+            AT.navigateTo('/reprise'); return;   // ré-auth : cohérent avec le reste du tunnel
+          }
+          var note = h('span', 'uperror-text', (res.error && res.error.message) || 'Aperçu indisponible.');
+          note.setAttribute('role', 'alert');
+          if (b.parentNode) { b.parentNode.appendChild(note); }
+        }
+      }, win);
+    });
+    return b;
+  }
+
   /* Zone de dépôt (partagée attente / rejetée — Lot 3c-3b). */
   function dropZone(p) {
     var drop = h('label', 'em-file-drop');
@@ -388,6 +422,9 @@ const etape = await getEntry('etapes', 'pieces');
       vb.appendChild(h('span', 'filerow-name', 'Pièce vérifiée'));
       vb.appendChild(h('span', 'filerow-meta', 'Vérifiée par le service des admissions — acquise, rien à faire.'));
       vrow.appendChild(vb);
+      var vactions = h('span', 'filerow-actions');
+      vactions.appendChild(voirBtn(p));   // A4 : re-consulter la pièce vérifiée (figée)
+      vrow.appendChild(vactions);
       body.appendChild(vrow);
       return body;
     }
@@ -414,6 +451,7 @@ const etape = await getEntry('etapes', 'pieces');
       rb.appendChild(h('span', 'filerow-meta', 'Reçue — en attente de vérification par le service des admissions.'));
       row.appendChild(rb);
       var actions = h('span', 'filerow-actions');
+      actions.appendChild(voirBtn(p));   // A4 : revoir la pièce déposée
       var replaceBtn = h('button', 'em-btn em-btn--secondary em-btn--sm', 'Remplacer');
       replaceBtn.type = 'button';
       var input = fileInput(p.code);
@@ -444,14 +482,25 @@ const etape = await getEntry('etapes', 'pieces');
       eb.appendChild(h('span', 'uperror-title', 'L’envoi a échoué.'));
       eb.appendChild(h('span', 'uperror-text', state.message || ''));
       var ea = h('span', 'uperror-actions');
-      var retry = h('button', 'em-btn em-btn--secondary', null);
-      retry.type = 'button';
-      retry.appendChild(svgUse('i-retry', 'ico-sm'));
-      retry.appendChild(document.createTextNode('Réessayer'));
-      var input2 = fileInput(p.code);
-      input2.hidden = true;
-      retry.addEventListener('click', function () { input2.click(); });
-      ea.appendChild(retry); ea.appendChild(input2);
+      if (state.retryFile) {
+        // A3 erreur RÉSEAU : renvoyer le MÊME fichier en un tap (pas de re-navigation sur 3G).
+        var retry = h('button', 'em-btn em-btn--secondary', null);
+        retry.type = 'button';
+        retry.appendChild(svgUse('i-retry', 'ico-sm'));
+        retry.appendChild(document.createTextNode('Réessayer'));
+        retry.addEventListener('click', function () { startUpload(p.code, state.retryFile); });
+        ea.appendChild(retry);
+      } else {
+        // A3 erreur FICHIER (type/taille/signature) : re-CHOISIR un fichier corrigé (verbe fidèle à l'action).
+        var choose = h('button', 'em-btn em-btn--secondary', null);
+        choose.type = 'button';
+        choose.appendChild(svgUse('i-upload', 'ico-sm'));
+        choose.appendChild(document.createTextNode('Choisir un autre fichier'));
+        var input2 = fileInput(p.code);
+        input2.hidden = true;
+        choose.addEventListener('click', function () { input2.click(); });
+        ea.appendChild(choose); ea.appendChild(input2);
+      }
       eb.appendChild(ea);
       err.appendChild(eb);
       body.appendChild(err);

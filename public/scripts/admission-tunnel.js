@@ -222,12 +222,24 @@
     var xhr = new XMLHttpRequest();
     xhr.open('POST', _apiUrl('public.upload_piece_file'));
     xhr.setRequestHeader('Accept', 'application/json');
-    if (xhr.upload && typeof onProgress === 'function') {
+    // A3 (3G Bénin) : l'échec dominant est la coupure EN COURS, pas la lenteur pure. Watchdog
+    // d'inactivité : 30 s sans progrès → abort (échec rapide, pas 3 min d'attente) ; xhr.timeout
+    // = 180 s en plafond dur (borne le cas « petit fichier envoyé, réponse qui pend »).
+    var IDLE_MS = 30000, idleTimer = null, stalled = false;
+    function armIdle() { if (idleTimer) { clearTimeout(idleTimer); } idleTimer = setTimeout(function () { stalled = true; xhr.abort(); }, IDLE_MS); }
+    function clearIdle() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
+    xhr.timeout = 180000;
+    if (xhr.upload) {
       xhr.upload.addEventListener('progress', function (e) {
-        if (e.lengthComputable) { onProgress(Math.round((e.loaded / e.total) * 100)); }
+        armIdle();   // tout progrès ré-arme le watchdog d'inactivité
+        if (e.lengthComputable && typeof onProgress === 'function') { onProgress(Math.round((e.loaded / e.total) * 100)); }
       });
+      // Corps entièrement envoyé → le watchdog ne borne plus la RÉPONSE serveur (xhr.timeout 180 s
+      // prend le relais) : évite un faux TIMEOUT si le serveur répond > 30 s après le dernier octet.
+      xhr.upload.addEventListener('load', clearIdle);
     }
     xhr.onload = function () {
+      clearIdle();
       var payload;
       try { payload = JSON.parse(xhr.responseText); } catch (e) { payload = null; }
       payload = (payload && (payload.message || payload)) ||
@@ -235,9 +247,49 @@
       _dispatch(payload, cb);
     };
     xhr.onerror = function () {
-      cb({ ok: false, data: null, error: { code: 'NETWORK_ERROR', message: 'Back injoignable.' } });
+      clearIdle();
+      cb({ ok: false, data: null, error: { code: 'NETWORK_ERROR', message: 'Connexion perdue. Vérifiez votre réseau et réessayez.' } });
     };
+    xhr.ontimeout = function () {
+      clearIdle();
+      cb({ ok: false, data: null, error: { code: 'TIMEOUT', message: 'Envoi trop long (réseau lent). Réessayez.' } });
+    };
+    xhr.onabort = function () {
+      clearIdle();
+      if (stalled) { cb({ ok: false, data: null, error: { code: 'TIMEOUT', message: 'Envoi interrompu — réseau instable. Réessayez.' } }); }
+    };
+    armIdle();
     xhr.send(fd);
+  }
+
+  /* UPLOAD-3G A4 (D-UPLOAD-REVIEW-17) : re-visualisation d'une pièce déposée (miroir viewPiece staff).
+     POST token+piece → blob inline nouvel onglet ; une réponse JSON = erreur (OTP/expiré/introuvable). */
+  function realViewOwnPiece(pieceCode, cb, win) {
+    var fd = new FormData();
+    fd.append('dossier_id', getDossierId());
+    fd.append('token', getDossierToken());
+    fd.append('piece_code', pieceCode);
+    fetch(_apiUrl('public.view_own_piece_file'), { method: 'POST', body: fd })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') > -1) {
+          return r.json().then(function (j) {
+            throw (j && j.message && j.message.error) || (j && j.error) || { message: 'Aperçu indisponible.' };
+          });
+        }
+        return r.blob();
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        // `win` = onglet ouvert DANS le geste (voirBtn) → non bloqué par les popup-blockers mobiles.
+        if (win && !win.closed) { win.location.href = url; } else { window.open(url, '_blank'); }
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);   // libère le blob (pas de fuite)
+        if (cb) { cb({ ok: true }); }
+      })
+      .catch(function (e) {
+        if (win && !win.closed) { win.close(); }   // referme l'onglet blanc sur erreur
+        if (cb) { cb({ ok: false, data: null, error: { code: (e && e.code) || 'VIEW_FAILED', message: (e && e.message) || 'Aperçu indisponible.' } }); }
+      });
   }
 
   /* LOT F (F6) : re-soumission après correction (INC→SOU). */
@@ -561,6 +613,7 @@
       getDossier: realGetDossier,
       classifyBac: realClassifyBac,
       uploadPieceFile: realUploadPieceFile,
+      viewOwnPiece: realViewOwnPiece,
       resubmitComplement: realResubmitComplement,
       candidateResubmit: realCandidateResubmit,
       recoverDossier: realRecoverDossier,
