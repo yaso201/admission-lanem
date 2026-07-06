@@ -42,6 +42,24 @@ const { title, dateEffet, version } = Astro.props;
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap"
       />
     </noscript>
+    <meta name="admission-api-base" content={import.meta.env.PUBLIC_API_BASE || ''} />
+    <!-- OBS-1 : capture d'erreur front (remontée non-bloquante ; silence défensif). -->
+    <script is:inline>
+      (function () {
+        var n = 0, m = document.querySelector('meta[name="admission-api-base"]'), B = (m && m.content) || window.ADMISSION_API_BASE || '';
+        function r(o) {
+          if (n++ > 5 || !B) return;
+          try {
+            o.front = 'applicant'; o.page = location.pathname; o.ua = (navigator.userAgent || '').slice(0, 160);
+            fetch(B + '/api/method/admission.api.health.log_client_error',
+              { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(o) }
+            ).catch(function () {});
+          } catch (e) {}
+        }
+        addEventListener('error', function (e) { r({ message: String(e.message || '').slice(0, 300), source: String(e.filename || '').slice(0, 200), line: e.lineno, col: e.colno }); });
+        addEventListener('unhandledrejection', function (e) { r({ message: ('reject: ' + String((e.reason && e.reason.message) || e.reason || '')).slice(0, 300) }); });
+      })();
+    </script>
   </head>
   <body>
     <Header />

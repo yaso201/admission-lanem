@@ -54,6 +54,23 @@ const apiBase = import.meta.env.PUBLIC_API_BASE || '';
       />
     </noscript>
     <meta name="admission-api-base" content={apiBase} />
+    <!-- OBS-1 : capture d'erreur front (remontée non-bloquante ; silence défensif : plafond + catch + pathname anti-PII). -->
+    <script is:inline>
+      (function () {
+        var n = 0, m = document.querySelector('meta[name="admission-api-base"]'), B = (m && m.content) || window.ADMISSION_API_BASE || '';
+        function r(o) {
+          if (n++ > 5 || !B) return;                                  /* plafond/page = anti-spam ET anti-boucle */
+          try {
+            o.front = 'applicant'; o.page = location.pathname; o.ua = (navigator.userAgent || '').slice(0, 160);
+            fetch(B + '/api/method/admission.api.health.log_client_error',
+              { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(o) }
+            ).catch(function () {});                                   /* échec SILENCIEUX → pas de nouvelle erreur → pas de boucle */
+          } catch (e) {}                                              /* le handler ne lève jamais sa propre erreur */
+        }
+        addEventListener('error', function (e) { r({ message: String(e.message || '').slice(0, 300), source: String(e.filename || '').slice(0, 200), line: e.lineno, col: e.colno }); });
+        addEventListener('unhandledrejection', function (e) { r({ message: ('reject: ' + String((e.reason && e.reason.message) || e.reason || '')).slice(0, 300) }); });
+      })();
+    </script>
   </head>
   <body>
     <!-- G3 (WCAG 2.4.1) : lien d'évitement vers le contenu principal -->
