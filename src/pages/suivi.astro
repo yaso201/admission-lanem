@@ -225,6 +225,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     ATT: { label: 'Liste d’attente', step: 2 },
     ACO: { label: 'Admis·e sous réserve', step: 2 },
     REF: { label: 'Candidature non retenue', step: 2 },
+    REJ: { label: 'Dossier non retenu', step: 1 },
     ACC: { label: 'Admission confirmée', step: 3 },
     DES: { label: 'Désistement', step: 3 },
     INS: { label: 'Inscrit·e', step: 4 }
@@ -246,6 +247,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     ATT: 'Vous serez recontacté·e si une place se libère.',
     ACO: 'Sous réserve de votre diplôme du Bac — voir le détail ci-dessus.',
     REF: 'Le jury n’a pas retenu votre candidature pour cette session.',
+    REJ: 'Votre dossier n’a pas passé le contrôle documentaire — voir le détail ci-dessus.',
     ACC: 'Réservez votre place en réglant les frais d’inscription ci-dessus.',
     DES: 'Vous vous êtes désisté·e de cette candidature.',
     INS: 'Bienvenue ! Votre inscription est finalisée.'
@@ -524,6 +526,20 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     return actionCard({ icon: icon || 'i-info', kicker: kicker, title: title, text: text, tone: tone });
   }
 
+  /* ---- Décision motivée (REJ/REF/DES) : motif FIDÈLE au texte staff + guidage. Réutilise actionCard.
+     D-CONF-05/07/08 : le candidat re-consulte la raison de la décision. Repli gracieux si motif absent. ---- */
+  function buildDecision(kicker, title, motif, guidance, tone) {
+    var card = actionCard({
+      icon: 'i-info', kicker: kicker, title: title,
+      text: (motif && String(motif).trim()) ? String(motif) : guidance,  // motif verbatim, jamais « undefined »
+      tone: tone
+    });
+    if (motif && String(motif).trim() && guidance) {
+      card.appendChild(h('span', 'aco-card-text', guidance));  // guidage rassurant sous le motif
+    }
+    return card;
+  }
+
   /* ---- Timeline ---- */
   function renderTimeline(statut) {
     var cur = (STATUS[statut] || {}).step || 0;
@@ -642,11 +658,22 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     else if (d.statut === 'ACO') { action.appendChild(buildAco(d)); }
     else if (d.statut === 'ACC') { action.appendChild(buildAcc(d)); }
     else if (d.statut === 'REF') {
-      action.appendChild(buildSimple('Décision', 'Candidature non retenue',
-        'Après étude attentive, le jury n’a pas retenu votre candidature pour cette session. Vous pouvez candidater à une prochaine session.', 'neutral'));
+      // D-CONF-07 : motif de refus FIDÈLE (jury) + guidage. Repli si non renseigné.
+      action.appendChild(buildDecision('Décision', 'Candidature non retenue', d.motif_refus,
+        'Après étude, le jury n’a pas retenu votre candidature pour cette session. Vous pouvez candidater à une prochaine session.', 'neutral'));
+    } else if (d.statut === 'REJ') {
+      // D-CONF-05 (HAUT) : motif de rejet au contrôle documentaire, re-consultable par le candidat.
+      action.appendChild(buildDecision('Contrôle documentaire', 'Dossier non retenu', d.motif_rejet,
+        'Contactez le service des admissions pour toute précision ; vous pouvez déposer une nouvelle candidature sur une session ouverte.', 'neutral'));
+    } else if (d.statut === 'ATT') {
+      // D-CONF-08 : rang en liste d’attente, exposé au candidat.
+      action.appendChild(buildSimple('Liste d’attente',
+        d.rang_liste_attente ? ('Vous êtes en liste d’attente — rang ' + d.rang_liste_attente) : 'Vous êtes en liste d’attente',
+        'Vous serez recontacté·e si une place se libère pour cette session.', 'neutral'));
     } else if (d.statut === 'DES') {
-      action.appendChild(buildSimple('Dossier clôturé', 'Candidature close (désistement)',
-        'Votre dossier a été clôturé. Si cette clôture ne correspond pas à votre demande, contactez le service des admissions — vous pouvez déposer une nouvelle candidature sur une session ouverte.', 'neutral'));
+      // D-CONF-07 : motif de désistement re-consultable.
+      action.appendChild(buildDecision('Dossier clôturé', 'Candidature close (désistement)', d.motif_desistement,
+        'Si cette clôture ne correspond pas à votre demande, contactez le service des admissions — vous pouvez déposer une nouvelle candidature sur une session ouverte.', 'neutral'));
     } else if (d.statut === 'INS') {
       action.appendChild(buildSimple('Inscription finalisée', 'Bienvenue à LaNEM !',
         'Votre inscription est confirmée. Vos accès à l’espace étudiant vous parviennent par e-mail.', 'success', 'i-cap'));
