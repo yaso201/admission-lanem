@@ -341,7 +341,12 @@ const etape = await getEntry('etapes', 'paiement');
      garde getDossier → pas de flash de la page paiement. Le BACK (3a) fait foi. ---- */
   AT.api.getDossier(function (gres) {
     var gd = (gres.ok && gres.data) || {};
-    if (AT.requisesManquantes(gd.pieces).length) { AT.navigateTo('/pieces'); return; }
+    /* FIX-RETOUR-DOSSIER — garde d'étape UNIQUE (resolveStep) : un payeur légitime a
+       resolveStep === '/recapitulatif' (BRO, pièces OK, frais1 non confirmé). Sinon : pièces
+       manquantes → /pieces, ou dossier PAYÉ/hors BRO → /suivi (défense en profondeur URL directe
+       & historique — le back 409 ALREADY_PAID reste le garant argent, inchangé). */
+    var step = AT.resolveStep(gd);
+    if (step !== '/recapitulatif') { AT.navigateTo(step); return; }
     bootPaiement();
   });
 
