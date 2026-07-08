@@ -112,3 +112,47 @@ test('adoptFromUrl : sans dossier/token → false', () => {
   globalThis.location = { search: '?foo=bar', pathname: '/reprise' };
   assert.equal(withNow(1000, () => AT.adoptFromUrl()), false);
 });
+
+// ── FIX-RETOUR-DOSSIER : resolveStep (source unique state-aware) ────────────────
+// Le résolveur ne renvoie JAMAIS /paiement (sous-pas de /recapitulatif, gardé par
+// la case attestation). Critères : frais1 confirmé D'ABORD, puis statut, puis pièces.
+
+function dossier(over) {
+  return Object.assign({
+    statut: 'BRO',
+    pieces: [{ code: 'cni', requise: true, statut: 'deposee' }],
+    paiement: { frais1: { statut: 'en_attente' }, frais2: null },
+  }, over || {});
+}
+
+test('resolveStep : BRO + pièce requise manquante → /pieces', () => {
+  assert.equal(AT.resolveStep(dossier({
+    pieces: [{ code: 'cni', requise: true, statut: 'manquante' }],
+  })), '/pieces');
+});
+
+test('resolveStep : BRO + pièces OK + frais1 non réglé → /recapitulatif', () => {
+  assert.equal(AT.resolveStep(dossier()), '/recapitulatif');
+});
+
+test('resolveStep : frais1 CONFIRMÉ → /suivi (jamais le tunnel de paiement)', () => {
+  assert.equal(AT.resolveStep(dossier({
+    paiement: { frais1: { statut: 'confirmed' }, frais2: null },
+  })), '/suivi');
+});
+
+test('resolveStep : INC (dossier hors BRO) → /suivi', () => {
+  assert.equal(AT.resolveStep(dossier({
+    statut: 'INC',
+    paiement: { frais1: { statut: 'confirmed' }, frais2: null },
+  })), '/suivi');
+});
+
+test('resolveStep : SOU → /suivi', () => {
+  assert.equal(AT.resolveStep(dossier({ statut: 'SOU' })), '/suivi');
+});
+
+test('resolveStep : dossier vide / null → /suivi (fail-safe, jamais le paiement)', () => {
+  assert.equal(AT.resolveStep(null), '/suivi');
+  assert.equal(AT.resolveStep({}), '/suivi');
+});

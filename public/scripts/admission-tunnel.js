@@ -599,6 +599,24 @@
     return (pieces || []).filter(function (p) { return p.requise && p.statut !== 'deposee'; });
   }
 
+  /* FIX-RETOUR-DOSSIER — RÉSOLVEUR D'ÉTAPE : source UNIQUE de « où envoyer le candidat »,
+     consciente de l'état (statut + paiement frais1 + pièces). Remplace les décisions dispersées
+     qui ignoraient le paiement (cause du symptôme « pièce complémentaire → page de paiement déjà
+     réglée »). Ne renvoie JAMAIS /paiement : le paiement est un sous-pas de /recapitulatif (gardé
+     par la case attestation). Fail-safe = /suivi (jamais le tunnel de paiement) sur entrée vide. */
+  function _fee1Confirmed(d) {
+    return !!(d && d.paiement && d.paiement.frais1 && d.paiement.frais1.statut === 'confirmed');
+  }
+  function resolveStep(d) {
+    d = d || {};
+    /* Payé (frais 1 confirmé) OU dossier au-delà du brouillon → espace de suivi, jamais le paiement. */
+    if (_fee1Confirmed(d)) { return '/suivi'; }
+    if (d.statut !== 'BRO') { return '/suivi'; }
+    /* Brouillon : pièces requises manquantes → dépôt ; sinon récapitulatif (→ paiement via son CTA). */
+    if (requisesManquantes(d.pieces).length) { return '/pieces'; }
+    return '/recapitulatif';
+  }
+
   global.AdmissionTunnel = {
     readCtx: readCtx,
     buildUrl: buildUrl,
@@ -629,6 +647,7 @@
     consumeAdoptedOtp: consumeAdoptedOtp,
     fmtXOF: fmtXOF,
     requisesManquantes: requisesManquantes,
+    resolveStep: resolveStep,
     /* LOT KKIAPAY : widget + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
     kkiapay: { launch: launchKkiapay, pollDossierStatus: pollDossierStatus },
     /* Hook optionnel : une page avec UI de saisie OTP peut intercepter TOKEN_EXPIRED. */
