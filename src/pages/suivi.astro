@@ -682,7 +682,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
         'Complétez vos pièces puis réglez les frais de dossier pour soumettre votre candidature.', null, 'i-upload');
       var actions = h('div', 'aco-actions');
       var go = h('a', 'em-btn em-btn--primary em-btn--lg', 'Reprendre ma candidature');
-      go.href = '/pieces';
+      go.href = AT.resolveStep(d);   /* FIX-RETOUR-DOSSIER : fin du hop /pieces systématique (BRO pièces OK → /recapitulatif) */
       actions.appendChild(go);
       bro.appendChild(actions);
       action.appendChild(bro);

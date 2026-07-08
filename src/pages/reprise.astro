@@ -166,14 +166,9 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   /* Après vérification : router selon l'état réel du dossier. */
   function routeByStatus() {
     AT.api.getDossier(function (res) {
-      if (!res.ok) { AT.navigateTo('/suivi'); return; }
-      var statut = res.data.statut;
-      if (statut === 'BRO') {
-        var pending = (res.data.pieces || []).some(function (p) { return p.requise && p.statut !== 'deposee'; });
-        window.location.href = pending ? '/pieces' : '/recapitulatif';
-      } else {
-        window.location.href = '/suivi';
-      }
+      /* FIX-RETOUR-DOSSIER : source unique resolveStep (statut + paiement + pièces).
+         Sur échec, repli /suivi (jamais le tunnel de paiement). */
+      window.location.href = res.ok ? AT.resolveStep(res.data) : '/suivi';
     });
   }
 
