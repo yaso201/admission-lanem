@@ -227,8 +227,10 @@ const etape = await getEntry('etapes', 'pieces');
 
     <div class="doc-list" id="doc-list"></div>
 
-    <!-- Lot 3c-3b : re-soumission (modèle A — le dossier reste SOU). Visible seulement en SOU ;
-         le bouton est GARDÉ (désactivé tant qu'une pièce est rejetée) mais le back garantit (409). -->
+    <!-- Lot 3c-3b + FIX-RETOUR-DOSSIER : geste terminal in-place. Visible en SOU (signalement,
+         le dossier reste SOU) ET en INC (re-soumission INC→SOU) ; copie/bouton posés par
+         renderResubmit selon le statut. Le bouton est GARDÉ (désactivé tant qu'une pièce est
+         rejetée/manquante) mais le back garantit (409). -->
     <div class="resubmit-box" id="resubmit-box" hidden>
       <span>
         <span class="resubmit-title">Vous avez re-déposé vos pièces&nbsp;?</span>
@@ -276,7 +278,8 @@ const etape = await getEntry('etapes', 'pieces');
   var pieces = [];   // état SERVEUR : [{code,label,statut,statut_reel,reject_reason,reject_comment,requise}]
   var live = {};     // état LOCAL transitoire : code -> {state,pct,message,fileName}
   var bars = {};     // code -> élément .fill (progression sans re-render)
-  var dossierStatut = '';     // Lot 3c-3b : statut du dossier (le bloc re-soumission n'existe qu'en SOU)
+  var dossierStatut = '';     // Lot 3c-3b : statut du dossier (conditionne re-soumission + CTA tunnel)
+  var dossier = null;         // FIX-RETOUR-DOSSIER : dossier complet pour resolveStep (paiement inclus)
   var resubmitDone = false;   // Lot 3c-3b : garde double-clic après un signalement réussi
 
   /* Descriptions UX locales par code de pièce (catalogue front). */
@@ -588,8 +591,12 @@ const etape = await getEntry('etapes', 'pieces');
       gateText.textContent = 'Toutes les pièces obligatoires sont envoyées';
       nextBtn.removeAttribute('disabled');
       nextBtn.setAttribute('aria-disabled', 'false');
-      nextBtn.onclick = function () { AT.navigateTo('/recapitulatif'); };
+      /* FIX-RETOUR-DOSSIER : cible calculée (BRO → /recapitulatif ; jamais /paiement pour un payé). */
+      nextBtn.onclick = function () { AT.navigateTo(AT.resolveStep(dossier)); };
     }
+    /* FIX-RETOUR-DOSSIER : le CTA « continuer vers le récapitulatif » n'a de sens qu'en BRO.
+       En INC/SOU, le geste terminal est le bloc de re-soumission (renderResubmit), pas le tunnel. */
+    nextBtn.hidden = (dossierStatut !== '' && dossierStatut !== 'BRO');
 
     renderResubmit();
   }
@@ -599,19 +606,36 @@ const etape = await getEntry('etapes', 'pieces');
   function renderResubmit() {
     var box = document.getElementById('resubmit-box');
     if (!box) { return; }
-    if (dossierStatut !== 'SOU') { box.hidden = true; return; }
+    /* FIX-RETOUR-DOSSIER : geste terminal in-place pour INC (re-soumission INC→SOU) ET SOU
+       (signalement, dossier reste SOU). Avant, SOU seulement → l'INC n'avait aucun geste sur
+       /pieces et repartait dans le tunnel de paiement. */
+    if (dossierStatut !== 'INC' && dossierStatut !== 'SOU') { box.hidden = true; return; }
     box.hidden = false;
     var btn = document.getElementById('resubmit-btn');
     var gate = document.getElementById('resubmit-gate');
+    /* Copie selon le geste : INC = re-soumettre (repart en étude) ; SOU = signaler le re-dépôt. */
+    var title = box.querySelector('.resubmit-title');
+    var text = box.querySelector('.resubmit-text');
+    if (dossierStatut === 'INC') {
+      btn.textContent = 'Re-soumettre mon dossier';
+      if (title) { title.textContent = 'Vous avez complété votre dossier ?'; }
+      if (text) { text.textContent = 'Re-soumettez votre dossier : il repartira en étude — sans frais supplémentaires (aucun nouveau paiement).'; }
+    } else {
+      btn.textContent = 'J’ai re-déposé toutes mes pièces';
+      if (title) { title.textContent = 'Vous avez re-déposé vos pièces ?'; }
+      if (text) { text.textContent = 'Signalez la fin de votre re-dépôt : votre dossier sera re-contrôlé par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).'; }
+    }
     if (resubmitDone) {
       btn.setAttribute('disabled', ''); btn.setAttribute('aria-disabled', 'true');
       gate.textContent = '';
       return;
     }
     var rejetees = pieces.filter(function (p) { return etatReel(p) === 'rejected'; }).length;
-    if (rejetees > 0) {
+    var manquantes = pieces.filter(function (p) { return p.requise && etatReel(p) === 'missing'; }).length;
+    if (rejetees > 0 || manquantes > 0) {
       btn.setAttribute('disabled', ''); btn.setAttribute('aria-disabled', 'true');
-      gate.textContent = 'Re-déposez d’abord les pièces rejetées (' + rejetees + ' restante' + (rejetees > 1 ? 's' : '') + ').';
+      var reste = rejetees + manquantes;
+      gate.textContent = 'Déposez d’abord les pièces à corriger ou à fournir (' + reste + ' restante' + (reste > 1 ? 's' : '') + ').';
     } else {
       btn.removeAttribute('disabled'); btn.setAttribute('aria-disabled', 'false');
       gate.textContent = '';
@@ -622,6 +646,23 @@ const etape = await getEntry('etapes', 'pieces');
     var msg = document.getElementById('resubmit-msg');
     btn.setAttribute('disabled', '');                       // garde double-clic
     msg.hidden = false; msg.classList.remove('is-error'); msg.textContent = 'Envoi…';
+    /* FIX-RETOUR-DOSSIER : INC → resubmit_complement (INC→SOU, repart en étude) puis retour au
+       suivi (pattern in-place ACO/fee2, JAMAIS le tunnel de paiement). SOU → candidate_resubmit
+       (le dossier reste SOU, signalement sur place). */
+    if (dossierStatut === 'INC') {
+      AT.api.resubmitComplement(function (res) {
+        if (res.ok) {
+          AT.navigateTo('/suivi');
+        } else if (res.error && res.error.code === 'OTP_RESENT') {
+          AT.navigateTo('/reprise');
+        } else {
+          btn.removeAttribute('disabled');
+          msg.classList.add('is-error');
+          msg.textContent = (res.error && res.error.message) || 'Re-soumission impossible. Réessayez.';
+        }
+      });
+      return;
+    }
     AT.api.candidateResubmit(function (res) {
       if (res.ok) {
         resubmitDone = true;
@@ -667,7 +708,8 @@ const etape = await getEntry('etapes', 'pieces');
     }
     var d = res.data;
     pieces = d.pieces || [];
-    dossierStatut = d.statut || '';   // Lot 3c-3b : conditionne le bloc re-soumission (SOU only)
+    dossierStatut = d.statut || '';   // Lot 3c-3b : conditionne le bloc re-soumission (INC+SOU)
+    dossier = d;                      // FIX-RETOUR-DOSSIER : resolveStep lit statut+paiement+pièces
     document.getElementById('pb-dossier').textContent = 'Dossier ' + d.dossier_id;
     var profilId = String(d.profil_bac || '').replace(/^bac_/, '');
     var profil = AP.PROFILS[profilId];
