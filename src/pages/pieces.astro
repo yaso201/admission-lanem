@@ -595,8 +595,12 @@ const etape = await getEntry('etapes', 'pieces');
       nextBtn.onclick = function () { AT.navigateTo(AT.resolveStep(dossier)); };
     }
     /* FIX-RETOUR-DOSSIER : le CTA « continuer vers le récapitulatif » n'a de sens qu'en BRO.
-       En INC/SOU, le geste terminal est le bloc de re-soumission (renderResubmit), pas le tunnel. */
-    nextBtn.hidden = (dossierStatut !== '' && dossierStatut !== 'BRO');
+       En INC/SOU, le geste terminal est le bloc de re-soumission (renderResubmit), pas le tunnel.
+       Masquage par style.display : le display de .em-btn écrase la règle UA [hidden] (prouvé
+       en capture recette — l'attribut hidden seul laissait le bouton visible). */
+    var tunnelCta = (dossierStatut === '' || dossierStatut === 'BRO');
+    nextBtn.hidden = !tunnelCta;
+    nextBtn.style.display = tunnelCta ? '' : 'none';
 
     renderResubmit();
   }
