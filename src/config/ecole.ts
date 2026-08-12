@@ -27,12 +27,16 @@ export const ecole = {
     addressShort: 'Cotonou · Bénin',
     mapHref: 'https://maps.app.goo.gl/NNEV5sor2Bd6JazUA',
   },
-  /** Liens légaux — slug = nom de fichier de la collection `legal` (sans .md). */
+  /** Liens légaux — slug = nom de fichier de la collection `legal` (sans .md).
+   *  Les 7 documents V1.0 : 4 dérivés du back (signés) + 3 front-only (informatifs). */
   legalLinks: [
-    { slug: 'cgv', label: 'Conditions générales de vente' },
+    { slug: 'mentions-legales', label: 'Mentions légales' },
+    { slug: 'cgv', label: 'Conditions générales de candidature en ligne' },
     { slug: 'politique-de-confidentialite', label: 'Politique de confidentialité' },
-    { slug: 'politique-de-remboursement', label: 'Politique de remboursement' },
-    { slug: 'consentement-transfert-donnees', label: 'Consentement au transfert de données' },
+    { slug: 'donnees-personnelles', label: 'Vos données personnelles — Vos droits' },
+    { slug: 'politique-cookies', label: 'Politique de gestion des cookies et traceurs' },
+    { slug: 'politique-de-remboursement', label: 'Politique de remboursement et droit de rétractation' },
+    { slug: 'consentement-transfert-donnees', label: 'Transferts de données vers des États tiers' },
   ],
 } as const;
 

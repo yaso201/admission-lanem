@@ -14,8 +14,8 @@
  * `SIMULATION_DISCLAIMER` n'est pas une page (affiché inline via get_frais).
  */
 export const LEGAL_MAP = [
-  { slug: 'cgv', documentType: 'CGV', titre: 'Conditions générales de vente' },
+  { slug: 'cgv', documentType: 'CGV', titre: 'Conditions générales de candidature en ligne' },
   { slug: 'politique-de-confidentialite', documentType: 'PRIVACY_POLICY', titre: 'Politique de confidentialité' },
-  { slug: 'politique-de-remboursement', documentType: 'REFUND_POLICY', titre: 'Politique de remboursement' },
-  { slug: 'consentement-transfert-donnees', documentType: 'DATA_TRANSFER_CONSENT', titre: 'Consentement au transfert de données' },
+  { slug: 'politique-de-remboursement', documentType: 'REFUND_POLICY', titre: 'Politique de remboursement et droit de rétractation' },
+  { slug: 'consentement-transfert-donnees', documentType: 'DATA_TRANSFER_CONSENT', titre: 'Transferts de données vers des États tiers' },
 ];
