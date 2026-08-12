@@ -584,6 +584,14 @@ const etape = await getEntry('etapes', 'identite');
     AT.api.createDossier(payload, function (res) {
       if (res.ok) {
         requestCode(function () { enterOtpPhase(true); });
+      } else if (res.error && res.error.code === 'SESSION_CLOSED') {
+        // Course de minuit : la session s'est clôturée entre le choix et l'envoi (onglet resté
+        // ouvert). Message compréhensible + retour actionnable vers le choix de session — sinon
+        // « choisir une session ouverte » serait un cul-de-sac (pas de sélecteur sur cet écran).
+        showFormError((res.error.message) || 'Cette session est clôturée. Veuillez choisir une session ouverte.');
+        el.cta.removeAttribute('disabled');
+        el.cta.innerHTML = 'Choisir une session ouverte<svg class="ico"><use href="#i-caretright"/></svg>';
+        setTimeout(function () { AT.navigateTo('/'); }, 2600);
       } else {
         el.cta.removeAttribute('disabled');
         el.cta.innerHTML = 'Réessayer<svg class="ico"><use href="#i-caretright"/></svg>';

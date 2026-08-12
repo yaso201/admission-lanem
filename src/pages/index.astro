@@ -64,6 +64,13 @@ const etape = await getEntry('etapes', 'formation');
   .session-card.is-selected { border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 1px var(--violet); }
   .session-card.is-selected .radio-mark { background: var(--violet); border-color: var(--violet); }
   .session-card.is-selected .radio-mark svg { opacity: 1; transform: scale(1); }
+  /* Session clôturée (échéance dépassée) : visible mais NON sélectionnable — miroir de la garde back. */
+  .session-card.is-disabled { cursor: not-allowed; background: rgba(15,14,10,0.03); opacity: 0.72; }
+  .session-card.is-disabled:hover { border-color: var(--border-default); }
+  .session-card.is-disabled .session-name { color: var(--text-secondary); }
+  .session-card.is-disabled .radio-mark { opacity: 0.4; }
+  .em-badge--muted { background: rgba(15,14,10,0.06); color: var(--text-secondary); }
+  .em-badge--muted .em-badge-dot { background: var(--text-tertiary); }
   .prog-choice { margin-top: 8px; font-size: var(--text-sm); color: var(--text-secondary); font-weight: 500; }
   /* Taille du select formations : 16px mobile (plancher anti-zoom iOS) → 17px desktop. */
   #programme { font-size: var(--text-base); }
@@ -414,18 +421,28 @@ const etape = await getEntry('etapes', 'formation');
   function renderSessions(){
     listEl.textContent = '';
     if (!sessions.length) {
-      var empty = h('p', 'sec-sub', 'Aucune session ouverte pour ce programme actuellement.');
-      listEl.appendChild(empty);
+      listEl.appendChild(h('p', 'sec-sub', 'Aucune session ouverte pour ce programme actuellement.'));
       currentSession = '';
       syncRecap();
       return;
     }
-    sessions.forEach(function (sess, i) {
-      var card = h('label', 'session-card' + (sess.id === currentSession ? ' is-selected' : ''));
+    var openCount = 0;
+    sessions.forEach(function (s) { if (s.selectable) { openCount++; } });
+    if (!openCount) {
+      // Sessions présentes mais toutes clôturées (échéance dépassée) : le calendrier reste
+      // lisible, mais aucune candidature n'est possible → note explicite au-dessus des cartes.
+      listEl.appendChild(h('p', 'sec-sub',
+        'Aucune session ouverte actuellement. Les sessions passées restent affichées à titre indicatif.'));
+    }
+    sessions.forEach(function (sess) {
+      var open = !!sess.selectable;
+      var card = h('label', 'session-card' + (open ? '' : ' is-disabled') + (sess.id === currentSession ? ' is-selected' : ''));
       card.dataset.session = sess.id;
+      if (!open) { card.setAttribute('aria-disabled', 'true'); }
       var radio = document.createElement('input');
       radio.type = 'radio'; radio.name = 'session'; radio.className = 'sr-only';
-      radio.checked = sess.id === currentSession;
+      radio.checked = open && sess.id === currentSession;
+      radio.disabled = !open;
       card.appendChild(radio);
       var mark = h('span', 'radio-mark'); mark.setAttribute('aria-hidden', 'true');
       mark.appendChild(svgUse('i-check'));
@@ -433,19 +450,26 @@ const etape = await getEntry('etapes', 'formation');
       var body = h('span', 'session-body');
       body.appendChild(h('span', 'session-name', sess.label + (sess.academic_year ? ' — ' + sess.academic_year : '')));
       var meta = h('span', 'session-meta');
-      var m1 = h('span');
-      m1.appendChild(svgUse('i-clock', 'ico-sm'));
-      m1.appendChild(document.createTextNode('Dépôts jusqu’au ' + frDate(sess.closes_on)));
-      meta.appendChild(m1);
+      if (sess.closes_on) {
+        var m1 = h('span');
+        m1.appendChild(svgUse('i-clock', 'ico-sm'));
+        m1.appendChild(document.createTextNode((open ? 'Dépôts jusqu’au ' : 'Dépôts clos le ') + frDate(sess.closes_on)));
+        meta.appendChild(m1);
+      }
       body.appendChild(meta);
       card.appendChild(body);
       var aside = h('span', 'session-aside');
-      var badge = h('span', 'em-badge em-badge--success em-badge--sm');
+      var badge = h('span', 'em-badge em-badge--sm ' + (open ? 'em-badge--success' : 'em-badge--muted'));
       badge.appendChild(h('span', 'em-badge-dot'));
-      badge.appendChild(document.createTextNode('Ouverte'));
+      badge.appendChild(document.createTextNode(open ? 'Ouverte' : 'Clôturée'));
       aside.appendChild(badge);
       card.appendChild(aside);
-      card.addEventListener('click', function () { selectSession(sess.id); });
+      if (open) {
+        card.addEventListener('click', function () { selectSession(sess.id); });
+      } else {
+        // Clic neutralisé : une session clôturée n'est pas sélectionnable (miroir de la garde back).
+        card.addEventListener('click', function (e) { e.preventDefault(); });
+      }
       listEl.appendChild(card);
     });
   }
@@ -465,10 +489,17 @@ const etape = await getEntry('etapes', 'formation');
     if (!code) { sessions = []; renderSessions(); return; }
     AT.api.listSessions(code, function (res) {
       sessions = (res.ok && res.data && res.data.sessions) || [];
-      currentSession = sessions.length ? sessions[0].id : '';
-      var n = sessions.length;
+      // Sélection par défaut : la PREMIÈRE session sélectionnable — jamais une échue.
+      currentSession = '';
+      var nOpen = 0;
+      for (var k = 0; k < sessions.length; k++) {
+        if (sessions[k].selectable) {
+          if (!currentSession) { currentSession = sessions[k].id; }
+          nOpen++;
+        }
+      }
       document.getElementById('sess-sub').firstChild.textContent =
-        (n > 1 ? n + ' sessions sont ouvertes pour ' : (n === 1 ? 'Une session est ouverte pour ' : 'Sessions pour '));
+        (nOpen > 1 ? nOpen + ' sessions sont ouvertes pour ' : (nOpen === 1 ? 'Une session est ouverte pour ' : 'Sessions pour '));
       renderSessions();
       loadFrais();
       syncRecap();
