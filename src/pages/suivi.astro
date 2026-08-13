@@ -416,6 +416,26 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 
   /* ---- ACC : offre — frais d'inscription (F7) ---- */
   function buildAcc(d) {
+    /* FIX-FEE2-VERROU (GF2) : la carte consulte l'ÉTAT DU PAIEMENT (paiement.frais2.statut),
+       pas le seul statut ACC — le dossier reste à ACC du règlement jusqu'à l'inscription.
+       Une fois réglé (ou reçu en attente), elle N'OFFRE PLUS de payer : elle indique l'état réel. */
+    var f2 = d.paiement && d.paiement.frais2;
+    var pstat = f2 && f2.statut;
+    if (pstat === 'confirmed' || pstat === 'paid') {
+      return buildSimple(
+        'Admission confirmée · frais réglés',
+        'Frais d’inscription réglés',
+        'Votre règlement est confirmé' + (f2.recu_ref ? ' (reçu ' + f2.recu_ref + ')' : '') +
+        '. Votre inscription est en cours de finalisation par l’établissement.',
+        'success', 'i-check');
+    }
+    if (pstat === 'pending') {
+      return buildSimple(
+        'Admission confirmée · règlement reçu',
+        'Règlement reçu — en attente de confirmation',
+        'Votre règlement des frais d’inscription a bien été enregistré. Il est en attente de confirmation par l’établissement ; vous recevrez votre reçu par e-mail dès validation.',
+        'neutral', 'i-clock');
+    }
     var card = actionCard({
       icon: 'i-bank', kicker: 'Admission confirmée · votre place vous attend', tone: 'success',
       title: 'Réservez votre place — frais d’inscription',
