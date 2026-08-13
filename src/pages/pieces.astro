@@ -451,7 +451,13 @@ const etape = await getEntry('etapes', 'pieces');
       var fi = svgUse('i-file', 'ico-lg fi'); fi.classList.add('fi'); row.appendChild(fi);
       var rb = h('span', 'filerow-body');
       rb.appendChild(h('span', 'filerow-name', 'Pièce enregistrée'));
-      rb.appendChild(h('span', 'filerow-meta', 'Reçue — en attente de vérification par le service des admissions.'));
+      // FIX-PIECES-CONTEXTE (GP5) : le libellé dit l'état RÉEL. En brouillon la pièce n'est pas
+      // encore transmise au service → ne pas annoncer une vérification qui n'a pas lieu (et rappeler
+      // implicitement qu'une soumission reste à faire). Après soumission → « en attente de vérif. ».
+      var brouillon = (dossierStatut === '' || dossierStatut === 'BRO');
+      rb.appendChild(h('span', 'filerow-meta', brouillon
+        ? 'Enregistrée dans votre dossier — sera transmise au service à la soumission.'
+        : 'Reçue — en attente de vérification par le service des admissions.'));
       row.appendChild(rb);
       var actions = h('span', 'filerow-actions');
       actions.appendChild(voirBtn(p));   // A4 : revoir la pièce déposée
@@ -610,11 +616,17 @@ const etape = await getEntry('etapes', 'pieces');
   function renderResubmit() {
     var box = document.getElementById('resubmit-box');
     if (!box) { return; }
-    /* FIX-RETOUR-DOSSIER : geste terminal in-place pour INC (re-soumission INC→SOU) ET SOU
-       (signalement, dossier reste SOU). Avant, SOU seulement → l'INC n'avait aucun geste sur
-       /pieces et repartait dans le tunnel de paiement. */
-    if (dossierStatut !== 'INC' && dossierStatut !== 'SOU') { box.hidden = true; return; }
+    /* FIX-PIECES-CONTEXTE (Option B, GP1/GP2/GP4) : le bloc n'apparaît QUE s'il y a effectivement
+       quelque chose à re-déposer — dossier en complément demandé (INC) OU une pièce rejetée. JAMAIS
+       en première constitution (brouillon), ni en SOU sans rejet (le message « sans frais » n'a de
+       sens que face à une pièce redemandée). Le geste terminal in-place (INC→SOU / signalement) reste.
+       Masquage par style.display : .resubmit-box a display:flex qui ÉCRASE [hidden] — même piège que
+       le nextBtn corrigé en juillet ; box.hidden seul laissait le bloc visible (leçon vérité visuelle). */
+    var aReDeposer = (dossierStatut === 'INC') ||
+                     pieces.some(function (p) { return etatReel(p) === 'rejected'; });
+    if (!aReDeposer) { box.hidden = true; box.style.display = 'none'; return; }
     box.hidden = false;
+    box.style.display = '';
     var btn = document.getElementById('resubmit-btn');
     var gate = document.getElementById('resubmit-gate');
     /* Copie selon le geste : INC = re-soumettre (repart en étude) ; SOU = signaler le re-dépôt. */
