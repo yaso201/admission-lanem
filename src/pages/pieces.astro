@@ -569,7 +569,12 @@ const etape = await getEntry('etapes', 'pieces');
       var st = h('span', 'doc-status');
       if (state.state === 'verified') { st.appendChild(badge('success', 'Vérifiée')); }
       else if (state.state === 'rejected') { st.appendChild(badge('error', 'Rejetée')); }
-      else if (state.state === 'deposee') { st.appendChild(badge('info', 'En vérification')); }
+      else if (state.state === 'deposee') {
+        // FIX-PIECES-CONTEXTE (GP5) : le badge dit l'état RÉEL, cohérent avec le libellé. En brouillon
+        // la pièce n'est pas encore en vérification → « Enregistrée » ; après soumission → « En vérification ».
+        var brouillonBadge = (dossierStatut === '' || dossierStatut === 'BRO');
+        st.appendChild(badge('info', brouillonBadge ? 'Enregistrée' : 'En vérification'));
+      }
       else if (state.state === 'progress') { st.appendChild(badge('info', 'Envoi…')); }
       else if (state.state === 'error') { st.appendChild(badge('error', 'Échec')); }
       else { st.appendChild(badge(null, p.requise ? 'À fournir' : 'En attente')); }
