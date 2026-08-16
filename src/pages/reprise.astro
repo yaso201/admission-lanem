@@ -42,10 +42,16 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   .recovery-otp[hidden], .recovery-results[hidden], .recovery-detail[hidden] { display: none; }
   .recovery-otp { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
   .recovery-list { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
-  .recovery-item { width: 100%; padding: var(--space-5); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); color: var(--text-primary); text-align: left; cursor: pointer; }
-  .recovery-item:hover, .recovery-item:focus-visible { border-color: var(--violet); box-shadow: var(--shadow-focus); }
-  .recovery-item strong { display: block; font-family: var(--font-mono); color: var(--violet); }
-  .recovery-item span { display: block; margin-top: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+  /* REPRISE-DOSSIER (DEC-333) : l'item devient un CONTENEUR — consulter à gauche,
+     « Reprendre » à droite (deux boutons FRÈRES, jamais imbriqués : validité HTML). */
+  .recovery-item { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); }
+  .recovery-item.is-hinted { border-color: var(--violet); box-shadow: var(--shadow-focus); }
+  .recovery-item-open { flex: 1; min-width: 0; appearance: none; border: 0; background: none; padding: var(--space-3); color: var(--text-primary); text-align: left; cursor: pointer; border-radius: var(--radius-sm); }
+  .recovery-item-open:hover, .recovery-item-open:focus-visible { background: var(--violet-soft); }
+  .recovery-item-open strong { display: block; font-family: var(--font-mono); color: var(--violet); }
+  .recovery-item-open span { display: block; margin-top: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+  .recovery-item-claim { flex-shrink: 0; }
+  #recovery-detail-claim { margin-top: var(--space-6); }
   .recovery-detail { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
   .recovery-detail h2, .recovery-results h2 { margin-top: var(--space-6); font-family: var(--font-display); font-size: var(--text-xl); }
   .recovery-facts { display: grid; grid-template-columns: minmax(120px, .7fr) 1.3fr; gap: var(--space-3) var(--space-5); margin-top: var(--space-5); }
@@ -111,6 +117,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       <h2>Vos candidatures</h2>
       <p class="sub" id="recovery-count"></p>
       <div class="recovery-list" id="recovery-list"></div>
+      <div class="msg" id="recovery-results-msg" role="status" aria-live="polite"></div>
     </section>
     <section class="recovery-detail" id="recovery-detail" hidden>
       <button type="button" class="em-btn em-btn--ghost" id="recovery-back">Retour à la liste</button>
@@ -121,7 +128,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   </div>
 </main>
 
-<script is:inline src="/scripts/admission-tunnel.js?v=4"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=5"></script>
 <script is:inline>
 (function () {
   'use strict';
@@ -186,11 +193,24 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     }, 1000);
   }
 
+  /* REPRISE-DOSSIER : créance MORTE (jeton tourné/périmé → INVALID_DOSSIER). L'écran
+     Mode A ne doit plus promettre une reprise qu'il ne peut pas honorer : purge de
+     l'ancrage + bascule vers le parcours par identité, avec un message qui dit QUOI FAIRE. */
+  function fallbackToRecover() {
+    AT.clearDossier();
+    cardOtp.hidden = true;
+    cardRecover.hidden = false;
+    msg(recoverMsg, '', "Ce lien n'est plus valide. Indiquez votre adresse e-mail pour retrouver vos dossiers.");
+    if (recoverEmail) { recoverEmail.focus(); }
+  }
+
   function sendCode() {
     AT.api.requestOtp(function (res) {
       if (res.ok) {
         msg(otpMsg, 'ok', 'Code envoyé à votre adresse e-mail.');
         startTimer(60);
+      } else if (res.error && res.error.code === 'INVALID_DOSSIER') {
+        fallbackToRecover();
       } else {
         msg(otpMsg, 'error', (res.error && res.error.message) || 'Envoi du code impossible. Réessayez.');
         resendWait.hidden = true;
@@ -221,6 +241,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
         msg(otpMsg, 'error', 'Code expiré. Demandez un nouveau code.');
         resendWait.hidden = true;
         btnResend.hidden = false;
+      } else if (res.error && res.error.code === 'INVALID_DOSSIER') {
+        fallbackToRecover();
       } else {
         msg(otpMsg, 'error', (res.error && res.error.message) || 'Code invalide. Réessayez.');
         digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
@@ -264,6 +286,25 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     list.appendChild(dt); list.appendChild(dd);
   }
 
+  /* REPRISE-DOSSIER (DEC-333) : émission du jeton d'édition puis retour dans le tunnel
+     à l'étape réelle (routeByStatus → resolveStep, source unique FIX-RETOUR-DOSSIER).
+     Le serveur re-contrôle tout (session + appartenance + état DEC-332) — un refus
+     STATE_READ_ONLY est affiché tel quel, sans navigation. */
+  function claimDossier(dossierId, msgEl) {
+    msg(msgEl, '', 'Préparation de la reprise…');
+    AT.api.claimRecoveredDossier(recoveryToken, dossierId, function (res) {
+      if (res.ok) {
+        msg(msgEl, 'ok', 'Dossier repris. Redirection…');
+        routeByStatus();
+      } else if (res.error && res.error.code === 'STATE_READ_ONLY') {
+        msg(msgEl, 'error', res.error.message ||
+          "Ce dossier n'est plus modifiable en ligne. Contactez l'administration pour toute correction.");
+      } else {
+        msg(msgEl, 'error', (res.error && res.error.message) || 'Reprise impossible. Recommencez la vérification.');
+      }
+    });
+  }
+
   function renderRecoveredDetail(data) {
     var identity = data.identite || {}, programme = data.programme || {}, session = data.session || {};
     var body = document.getElementById('recovery-detail-body');
@@ -284,6 +325,19 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       pieces.appendChild(li);
     });
     if (pieces.children.length) { body.appendChild(pieces); }
+    /* `reprenable` vient du BACK (DEC-332, front pur renderer) : aucun bouton trompeur
+       sur un dossier en lecture seule — consultation intacte pour tous les états. */
+    if (data.reprenable) {
+      var claimBtn = document.createElement('button');
+      claimBtn.type = 'button';
+      claimBtn.className = 'em-btn em-btn--primary';
+      claimBtn.id = 'recovery-detail-claim';
+      claimBtn.textContent = 'Reprendre ce dossier';
+      claimBtn.addEventListener('click', function () {
+        claimDossier(data.dossier_id, document.getElementById('recovery-detail-msg'));
+      });
+      body.appendChild(claimBtn);
+    }
     document.getElementById('recovery-detail-title').textContent = 'Dossier ' + data.dossier_id;
     recoveryResults.hidden = true;
     recoveryDetail.hidden = false;
@@ -306,19 +360,42 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     recoveryList.textContent = '';
     document.getElementById('recovery-count').textContent = items.length +
       ' dossier' + (items.length > 1 ? 's' : '') + ' associé' + (items.length > 1 ? 's' : '') + ' à cette identité.';
+    var hinted = null;
     items.forEach(function (item) {
-      var button = document.createElement('button'); button.type = 'button'; button.className = 'recovery-item';
+      var row = document.createElement('div');
+      row.className = 'recovery-item';
+      var open = document.createElement('button'); open.type = 'button'; open.className = 'recovery-item-open';
       var title = document.createElement('strong'); title.textContent = item.dossier_id;
       var meta = document.createElement('span');
       meta.textContent = ((item.programme || {}).label || (item.programme || {}).code || 'Programme') +
         ' · ' + ((item.session || {}).label || (item.session || {}).id || 'Session') + ' · ' + (item.statut || '—');
-      button.appendChild(title); button.appendChild(meta);
-      button.addEventListener('click', function () { openRecoveredDossier(item.dossier_id); });
-      recoveryList.appendChild(button);
+      open.appendChild(title); open.appendChild(meta);
+      open.addEventListener('click', function () { openRecoveredDossier(item.dossier_id); });
+      row.appendChild(open);
+      /* Bouton « Reprendre » ssi le BACK le dit (`reprenable`, DEC-332) — le front rend, il
+         ne décide pas ; le serveur re-refusera de toute façon un claim forcé (409). */
+      if (item.reprenable) {
+        var claim = document.createElement('button');
+        claim.type = 'button';
+        claim.className = 'em-btn em-btn--primary recovery-item-claim';
+        claim.textContent = 'Reprendre';
+        claim.addEventListener('click', function () {
+          claimDossier(item.dossier_id, document.getElementById('recovery-results-msg'));
+        });
+        row.appendChild(claim);
+      }
+      /* ?dossier= = INDICE de pré-sélection, JAMAIS une preuve : surligné seulement s'il
+         figure dans la liste résolue par l'OTP — un numéro étranger est ignoré. */
+      if (hintDossier && item.dossier_id === hintDossier) {
+        row.classList.add('is-hinted');
+        hinted = row;
+      }
+      recoveryList.appendChild(row);
     });
     recoveryOtp.hidden = true;
     recoveryDetail.hidden = true;
     recoveryResults.hidden = false;
+    if (hinted && hinted.scrollIntoView) { try { hinted.scrollIntoView({ block: 'center' }); } catch (e) {} }
   }
 
   document.getElementById('btn-recover').addEventListener('click', function () {
@@ -369,6 +446,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     msg(otpMsg, '', 'Vérification automatique…');
     AT.api.verifyOtp('email', digits.map(function (d) { return d.value; }).join(''), function (res) {
       if (res.ok) { msg(otpMsg, 'ok', 'Vérifié. Reprise de votre dossier…'); routeByStatus(); return; }
+      if (res.error && res.error.code === 'INVALID_DOSSIER') { fallbackToRecover(); return; }
       digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
       resendWait.hidden = true; btnResend.hidden = false;
       if (res.error && res.error.code === 'OTP_EXPIRED') {
@@ -382,6 +460,9 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 
   /* ---- Aiguillage : lien tokenisé (mode A) ou recherche (mode B) ---- */
   var adopted = AT.adoptFromUrl();
+  /* Indice de pré-sélection (REPRISE-DOSSIER) : `?dossier=` survit au strip token/otp
+     d'adoptFromUrl — consommé UNIQUEMENT pour surligner dans la liste post-OTP. */
+  var hintDossier = new URLSearchParams(location.search).get('dossier') || null;
   if (adopted || (AT.getDossierId() && AT.getDossierToken())) {
     cardOtp.hidden = false;
     document.getElementById('dossier-pill').textContent = AT.getDossierId();

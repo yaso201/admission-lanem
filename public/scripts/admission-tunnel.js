@@ -327,6 +327,22 @@
     }, cb);
   }
 
+  /* REPRISE-DOSSIER (DEC-333) : émission du jeton d'ÉDITION mono-dossier après OTP
+     identité. SEUL appel du bloc DEC-323/U à adopter un jeton (même patron que verify_otp) :
+     le serveur re-contrôle session + appartenance + état (DEC-332) — le front ne décide rien.
+     Un refus n'adopte RIEN (l'ancrage reste vide/intact). */
+  function realClaimRecoveredDossier(recoveryToken, dossierId, cb) {
+    _post('public.claim_recovered_dossier', {
+      recovery_token: recoveryToken,
+      dossier_id: dossierId
+    }, function (res) {
+      if (res.ok && res.data && res.data.token) {
+        saveDossier(res.data.dossier_id || dossierId, res.data.token);
+      }
+      cb(res);
+    });
+  }
+
   /* LOT G (G2/DAT-1) : droit à l'effacement — IRRÉVERSIBLE, token + OTP + confirm exigés. */
   function realRequestDataDeletion(cb) {
     _post('public.request_data_deletion', {
@@ -680,6 +696,7 @@
       recoverDossier: realRecoverDossier,
       verifyRecoveryOtp: realVerifyRecoveryOtp,
       getRecoveredDossier: realGetRecoveredDossier,
+      claimRecoveredDossier: realClaimRecoveredDossier,
       requestDataDeletion: realRequestDataDeletion,
       enrollmentPay: realEnrollmentPay,
       processPayment: processPayment,
