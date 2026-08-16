@@ -617,6 +617,29 @@
     return '/recapitulatif';
   }
 
+  /* CONVOCATION-PREPA : téléchargement candidat de la convocation (PDF). GET token-authé →
+     blob → download. En cas d'erreur (pas encore confirmé / pas d'épreuve), renvoie {ok:false}. */
+  function downloadConvocation(cb) {
+    var id = getDossierId(), token = getDossierToken();
+    if (!id || !token) { if (cb) { cb({ ok: false }); } return; }
+    var url = _apiUrl('public.download_convocation') +
+      '?dossier_id=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(token);
+    fetch(url).then(function (r) {
+      var ct = r.headers.get('content-type') || '';
+      if (ct.indexOf('pdf') !== -1) {
+        return r.blob().then(function (b) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(b); a.download = 'convocation.pdf';
+          document.body.appendChild(a); a.click(); a.remove();
+          if (cb) { cb({ ok: true }); }
+        });
+      }
+      return r.json().then(function (j) {
+        cb && cb({ ok: false, error: (j && j.message && j.message.error) || {} });
+      });
+    }).catch(function () { if (cb) { cb({ ok: false }); } });
+  }
+
   global.AdmissionTunnel = {
     readCtx: readCtx,
     buildUrl: buildUrl,
@@ -641,7 +664,8 @@
       getFrais: getFrais,
       getLegalDocuments: getLegalDocuments,
       listSessions: listSessions,
-      listProgrammes: listProgrammes
+      listProgrammes: listProgrammes,
+      downloadConvocation: downloadConvocation
     },
     adoptFromUrl: adoptFromUrl,
     consumeAdoptedOtp: consumeAdoptedOtp,

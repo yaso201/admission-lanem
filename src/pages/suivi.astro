@@ -205,7 +205,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   <p class="ro-note" id="sv-note" hidden><svg class="ico-sm"><use href="#i-lock"/></svg>Pour toute question, contactez le service des admissions — vos décisions vous sont aussi notifiées par e-mail.</p>
 </main>
 
-<script is:inline src="/scripts/admission-tunnel.js"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=2"></script>
 <script is:inline>
 /* LOT F (F6/F7/F8) — suivi 100 % DATA-DRIVEN sur get_dossier : statut, timeline,
    pièces, paiements, actions contextuelles (INC re-soumission, ACO dépôt diplôme,
@@ -603,7 +603,24 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     var p = d.paiement || {};
     if (p.frais1) { wrap.appendChild(payRow('Frais de dossier', p.frais1)); }
     if (p.frais2) { wrap.appendChild(payRow('Frais d’inscription', p.frais2)); }
-    if (p.frais1 || p.frais2) { show('sv-pay-card'); }
+    // CONVOCATION-PREPA : canal de référence — téléchargeable à tout moment dès frais 1 confirmé
+    // + session à date d'épreuve. Aucun cas particulier de parcours (piloté par le back).
+    if (d.convocation && d.convocation.available) {
+      var cv = h('div', 'sv-convoc');
+      cv.appendChild(h('span', 'nm', 'Convocation au concours' + (d.convocation.numero ? ' · N° ' + d.convocation.numero : '')));
+      var cb = h('button', 'em-btn em-btn--primary em-btn--sm', 'Télécharger ma convocation');
+      cb.type = 'button';
+      cb.addEventListener('click', function () {
+        cb.setAttribute('disabled', '');
+        AT.api.downloadConvocation(function (res) {
+          cb.removeAttribute('disabled');
+          if (!res.ok) { cb.textContent = 'Indisponible — réessayez'; }
+        });
+      });
+      cv.appendChild(cb);
+      wrap.appendChild(cv);
+    }
+    if (p.frais1 || p.frais2 || (d.convocation && d.convocation.available)) { show('sv-pay-card'); }
   }
 
   /* ---- Documents ---- */
