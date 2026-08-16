@@ -542,47 +542,54 @@
     return USE_REAL_API ? realProcessPayment(mode, cb, opts) : mockProcessPayment(mode, cb);
   }
 
-  /* ---------- LOT KKIAPAY : widget réel + attente de confirmation webhook ---------- */
+  /* ---------- PAIEMENT-FEDAPAY : checkout réel + attente de confirmation webhook ---------- */
 
-  var KKIAPAY_CDN = 'https://cdn.kkiapay.me/k.js';
-  var _kkLoaded = null;
+  var FEDAPAY_CDN = 'https://cdn.fedapay.com/checkout.js?v=1.1.7';
+  var _fpLoaded = null;
 
-  function _loadKkiapay(cb) {
-    if (window.openKkiapayWidget) { cb(true); return; }
-    if (_kkLoaded) { _kkLoaded.push(cb); return; }
-    _kkLoaded = [cb];
+  function _loadFedapay(cb) {
+    if (window.FedaPay) { cb(true); return; }
+    if (_fpLoaded) { _fpLoaded.push(cb); return; }
+    _fpLoaded = [cb];
     var sc = document.createElement('script');
-    sc.src = KKIAPAY_CDN;
-    sc.onload = function () { _kkLoaded.forEach(function (f) { f(true); }); _kkLoaded = null; };
-    sc.onerror = function () { _kkLoaded.forEach(function (f) { f(false); }); _kkLoaded = null; };
+    sc.src = FEDAPAY_CDN;
+    sc.onload = function () { _fpLoaded.forEach(function (f) { f(true); }); _fpLoaded = null; };
+    sc.onerror = function () { _fpLoaded.forEach(function (f) { f(false); }); _fpLoaded = null; };
     document.body.appendChild(sc);
   }
 
-  /** Ouvre le widget KkiaPay depuis un descriptor serveur (prepare_online_payment).
+  /** Ouvre le checkout FedaPay depuis un descriptor serveur (prepare_online_payment).
    *  handlers: { success: fn(transactionId), failed: fn(err), unavailable: fn() }.
-   *  Le listener succès du widget n'est PAS la confirmation : le webhook (re-vérifié
-   *  serveur) fait foi — enchaîner sur pollDossier. Jamais de clé privée ici. */
-  function launchKkiapay(desc, handlers) {
+   *  Le retour du checkout n'est PAS la confirmation : le WEBHOOK (re-vérifié serveur, signature
+   *  HMAC + verify API) fait foi — enchaîner sur pollDossier. Clé PUBLIQUE seule ici, jamais de secret.
+   *  `custom_metadata.provider_reference` fait l'aller-retour checkout→webhook (liage du Pending). */
+  function launchPayment(desc, handlers) {
     handlers = handlers || {};
     if (!desc || !desc.public_key) { (handlers.unavailable || function () {})(); return; }
-    _loadKkiapay(function (ok) {
-      if (!ok) { (handlers.unavailable || function () {})(); return; }
+    _loadFedapay(function (ok) {
+      if (!ok || !window.FedaPay) { (handlers.unavailable || function () {})(); return; }
       try {
-        if (window.addSuccessListener) {
-          window.addSuccessListener(function (resp) {
-            (handlers.success || function () {})(resp && resp.transactionId);
-          });
-        }
-        if (window.addFailedListener) {
-          window.addFailedListener(function (err) { (handlers.failed || function () {})(err); });
-        }
-        window.openKkiapayWidget({
-          amount: desc.amount_xof,
-          key: desc.public_key,
-          sandbox: !!desc.sandbox,
-          data: desc.data || '',
-          position: 'center'
+        var FP = window.FedaPay;
+        var checkout = FP.init({
+          public_key: desc.public_key,
+          environment: desc.sandbox ? 'sandbox' : 'live',
+          transaction: {
+            amount: desc.amount_xof,
+            description: 'LaNEM — frais de dossier',
+            custom_metadata: desc.custom_metadata || { provider_reference: desc.reference }
+          },
+          currency: { iso: 'XOF' },
+          onComplete: function (resp) {
+            /* CHECKOUT_COMPLETED → la transaction est partie ; le WEBHOOK confirme (poll ensuite).
+               Sinon (DIALOG_DISMISSED / échec) → handler failed. */
+            if (resp && resp.reason === FP.CHECKOUT_COMPLETED) {
+              (handlers.success || function () {})(resp.transaction && resp.transaction.id);
+            } else {
+              (handlers.failed || function () {})(resp);
+            }
+          }
         });
+        checkout.open();
       } catch (e) { (handlers.unavailable || function () {})(); }
     });
   }
@@ -687,8 +694,13 @@
     fmtXOF: fmtXOF,
     requisesManquantes: requisesManquantes,
     resolveStep: resolveStep,
-    /* LOT KKIAPAY : widget + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
-    kkiapay: { launch: launchKkiapay, pollDossierStatus: pollDossierStatus },
+    /* PAIEMENT-FEDAPAY : checkout + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
+    payment: { launch: launchPayment, pollDossierStatus: pollDossierStatus },
+    /* ⚠️ Alias historique TROMPEUR : `AT.kkiapay` lance désormais du FEDAPAY (le nom MENT).
+       Conservé UNIQUEMENT pour compat `suivi.astro` (frais 2), hors write-set de ce lot.
+       INSTRUCTION DE REPRISE : renommer en `AT.payment` quand suivi.astro entrera dans un
+       write-set, puis supprimer cet alias. — PAIEMENT-FEDAPAY */
+    kkiapay: { launch: launchPayment, pollDossierStatus: pollDossierStatus },
     /* Hook optionnel : une page avec UI de saisie OTP peut intercepter TOKEN_EXPIRED. */
     onTokenExpired: null,
     /* Accès direct si besoin (debug, tests) */
