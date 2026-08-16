@@ -121,6 +121,14 @@ const etape = await getEntry('etapes', 'paiement');
   .sop-check .em-check-input:checked { background-color: var(--violet); border-color: var(--violet); }
   .sop-check-text { font-size: var(--text-sm); color: var(--text-primary); line-height: var(--leading-normal); }
 
+  /* ---- OUVERTURE-SOP (DEC-335) : paiement en ligne différé — message orienté action ---- */
+  .pay-deferred { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-5) var(--space-6); background: var(--violet-soft); border: 1px solid var(--border-default); border-radius: var(--radius-md); margin-bottom: var(--space-6); }
+  .pay-deferred[hidden] { display: none; }
+  .pay-deferred svg { color: var(--violet); flex-shrink: 0; margin-top: 1px; }
+  .pay-deferred-title { font-size: var(--text-sm); font-weight: 700; color: var(--text-primary); }
+  .pay-deferred-text { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 2px; line-height: var(--leading-normal); }
+  .pay-deferred-text em { color: var(--text-tertiary); }
+
   /* ---- Breakpoint 480px ---- */
   @media (min-width: 480px) {
     .ctx-inner { padding: var(--space-4) var(--space-8); }
@@ -184,6 +192,19 @@ const etape = await getEntry('etapes', 'paiement');
   <!-- Payment column -->
   <div>
     <div class="pay-head" id="pay-head">Comment régler vos frais de dossier ?</div>
+
+    <!-- OUVERTURE-SOP (DEC-335) : affiché par le serveur (get_frais.online_payment_enabled=0).
+         Le mobile money est une NOUVEAUTÉ À VENIR, jamais une panne ; le chemin SOP est au centre. -->
+    <div class="pay-deferred" id="pay-deferred" hidden>
+      <svg class="ico-lg"><use href="#i-info"/></svg>
+      <span>
+        <span class="pay-deferred-title">Paiement des frais de candidature</span>
+        <span class="pay-deferred-text">Le règlement s'effectue actuellement <strong>par espèces ou virement bancaire</strong>.
+          Rendez-vous à l'université ou effectuez votre virement, puis déclarez votre paiement ci-dessous&nbsp;:
+          votre dossier sera validé dès confirmation par nos services.
+          <em>Le paiement par mobile money sera disponible prochainement.</em></span>
+      </span>
+    </div>
 
     <div class="pay-paths" role="radiogroup" aria-label="Mode de paiement">
       <div class="pay-path is-active" data-path="online" role="radio" aria-checked="true" tabindex="0">
@@ -334,6 +355,12 @@ const etape = await getEntry('etapes', 'paiement');
           panelSop.style.display = 'none';
           selectPath('online');
         }
+        /* OUVERTURE-SOP (DEC-334/335) : le SERVEUR décide (online_payment_enabled) — le
+           front rend. Fermé → bouton en ligne RETIRÉ (jamais un bouton qui échoue),
+           message « prochainement », chemin SOP au centre. Clé absente (back antérieur)
+           = ouvert (compatibilité). Appliqué APRÈS le bloc RIB : si l'en-ligne est fermé,
+           la voie SOP est ré-affichée même sans RIB (l'espèce reste possible). */
+        applyOnlineAvailability(res.data);
         syncCta();
       } else {
         document.getElementById('amt-main').textContent = '—';
@@ -350,6 +377,22 @@ const etape = await getEntry('etapes', 'paiement');
         if (note) { note.textContent = 'Politique de remboursement v' + (docs[key].version || '') + ' — ' + (docs[key].content_text || '').slice(0, 220); }
       }
     });
+  }
+
+  /* OUVERTURE-SOP (DEC-335) : retire le chemin en ligne quand le serveur le ferme. */
+  function applyOnlineAvailability(data) {
+    var enabled = ('online_payment_enabled' in (data || {})) ? !!data.online_payment_enabled : true;
+    if (enabled) { return; }
+    var onlinePath = document.querySelector('.pay-path[data-path="online"]');
+    if (onlinePath) { onlinePath.style.display = 'none'; }        /* RETIRÉ, pas grisé */
+    panelOnline.style.display = 'none';
+    var deferred = document.getElementById('pay-deferred');
+    if (deferred) { deferred.hidden = false; }
+    /* La voie SOP redevient visible même si le RIB manquait (l'espèce reste possible). */
+    var sopPath = document.querySelector('.pay-path[data-path="sop"]');
+    if (sopPath) { sopPath.style.display = ''; }
+    panelSop.style.display = '';
+    selectPath('sop');
   }
 
   function ctaHTML(label) {

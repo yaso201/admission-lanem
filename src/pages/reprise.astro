@@ -129,6 +129,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 </main>
 
 <script is:inline src="/scripts/admission-tunnel.js?v=5"></script>
+<script is:inline src="/scripts/otp-digits.js?v=1"></script>
 <script is:inline>
 (function () {
   'use strict';
@@ -146,34 +147,12 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     el2.textContent = text || '';
   }
 
-  /* ---- Saisie code (auto-avance + collage) ---- */
-  digits.forEach(function (el, i) {
-    el.addEventListener('input', function () {
-      el.value = el.value.replace(/[^0-9]/g, '').slice(0, 1);
-      el.classList.toggle('is-filled', !!el.value);
-      if (el.value && i < digits.length - 1) { digits[i + 1].focus(); }
-    });
-    el.addEventListener('keydown', function (e) {
-      if (e.key === 'Backspace' && !el.value && i > 0) {
-        e.preventDefault();
-        digits[i - 1].value = '';
-        digits[i - 1].classList.remove('is-filled');
-        digits[i - 1].focus();
-      }
-    });
-    el.addEventListener('paste', function (e) {
-      var text = (e.clipboardData || window.clipboardData).getData('text') || '';
-      var nums = text.replace(/[^0-9]/g, '').slice(0, digits.length);
-      if (nums.length > 1) {
-        e.preventDefault();
-        digits.forEach(function (d, j) {
-          d.value = nums[j] || '';
-          d.classList.toggle('is-filled', !!d.value);
-        });
-        digits[Math.min(nums.length, digits.length - 1)].focus();
-      }
-    });
-  });
+  /* DEC-337 (OUVERTURE-SOP) — confort de saisie : implémentation PARTAGÉE otp-digits.js
+     (aussi consommée par /identite). Auto-avance, backspace, collage réparti+validé,
+     Entrée, auto-validation one-shot au 6ᵉ ; reset() sur refus (compteur préservé). */
+  var otpCtl = window.OtpDigits ? window.OtpDigits.wire(digits, {
+    submit: function () { document.getElementById('btn-verify').click(); }
+  }) : null;
 
   var tick = null;
   function startTimer(seconds) {
@@ -245,8 +224,9 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
         fallbackToRecover();
       } else {
         msg(otpMsg, 'error', (res.error && res.error.message) || 'Code invalide. Réessayez.');
-        digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
-        digits[0].focus();
+        /* DEC-337 (garde-fou 2) : refusé → vidé + focus 1ʳᵉ + auto ré-armé. */
+        if (otpCtl) { otpCtl.reset(); }
+        else { digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); }); digits[0].focus(); }
       }
     });
   });
@@ -262,23 +242,11 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   var recoveryDetail = document.getElementById('recovery-detail');
   var recoveryToken = null; /* volontairement ni localStorage ni sessionStorage */
 
-  recoveryDigits.forEach(function (field, index) {
-    field.addEventListener('input', function () {
-      field.value = field.value.replace(/[^0-9]/g, '').slice(0, 1);
-      field.classList.toggle('is-filled', !!field.value);
-      if (field.value && index < recoveryDigits.length - 1) { recoveryDigits[index + 1].focus(); }
-    });
-    field.addEventListener('keydown', function (event) {
-      if (event.key === 'Backspace' && !field.value && index > 0) { recoveryDigits[index - 1].focus(); }
-    });
-    field.addEventListener('paste', function (event) {
-      var value = (event.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
-      if (value.length > 1) {
-        event.preventDefault();
-        recoveryDigits.forEach(function (item, i) { item.value = value[i] || ''; item.classList.toggle('is-filled', !!item.value); });
-      }
-    });
-  });
+  /* DEC-337 : même implémentation partagée pour l'OTP de consultation (2ᵉ consommateur
+     de cette page) — le compteur Redis des 5 tentatives ne brûle jamais en silence. */
+  var recoveryCtl = window.OtpDigits ? window.OtpDigits.wire(recoveryDigits, {
+    submit: function () { document.getElementById('btn-recovery-verify').click(); }
+  }) : null;
 
   function addFact(list, label, value) {
     var dt = document.createElement('dt'); dt.textContent = label;
@@ -429,6 +397,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       } else {
         recoveryToken = null;
         msg(recoveryOtpMsg, 'error', (res.error && res.error.message) || 'Code invalide ou expiré.');
+        /* DEC-337 (garde-fou 2) : refusé → vidé + focus 1ʳᵉ + auto ré-armé. */
+        if (recoveryCtl) { recoveryCtl.reset(); }
       }
     });
   });
@@ -447,7 +417,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     AT.api.verifyOtp('email', digits.map(function (d) { return d.value; }).join(''), function (res) {
       if (res.ok) { msg(otpMsg, 'ok', 'Vérifié. Reprise de votre dossier…'); routeByStatus(); return; }
       if (res.error && res.error.code === 'INVALID_DOSSIER') { fallbackToRecover(); return; }
-      digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
+      if (otpCtl) { otpCtl.reset(); }
+      else { digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); }); }
       resendWait.hidden = true; btnResend.hidden = false;
       if (res.error && res.error.code === 'OTP_EXPIRED') {
         msg(otpMsg, 'error', 'Lien expiré. Demandez un nouveau code ci-dessous.');

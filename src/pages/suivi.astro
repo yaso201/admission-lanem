@@ -534,9 +534,24 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       });
       return b;
     }
-    channels.appendChild(payBtn('Payer en ligne', 'online', true));
-    channels.appendChild(payBtn('Par virement', 'bank', false));
-    channels.appendChild(payBtn('En espèces (Direction)', 'cash', false));
+    /* OUVERTURE-SOP (DEC-334/335) — le BACK décide si l'initiation en ligne est ouverte
+       (get_frais.online_payment_enabled) : bouton RETIRÉ quand fermée (jamais un bouton
+       qui échoue), mobile money = nouveauté à venir, virement/espèces au centre. Clé
+       absente (back antérieur) = ouvert. getFrais est CACHÉ par le tunnel → 0 requête
+       supplémentaire (la carte l'appelle déjà pour le montant). */
+    AT.api.getFrais({ session: d.session && d.session.id }, function (fres) {
+      var fdata = (fres.ok && fres.data) || {};
+      var enabled = ('online_payment_enabled' in fdata) ? !!fdata.online_payment_enabled : true;
+      if (enabled) {
+        channels.appendChild(payBtn('Payer en ligne', 'online', true));
+      } else {
+        card.insertBefore(h('span', 'aco-card-text',
+          'Le paiement par mobile money sera disponible prochainement — réglez par virement ou en espèces.'),
+          channels);
+      }
+      channels.appendChild(payBtn('Par virement', 'bank', !enabled));
+      channels.appendChild(payBtn('En espèces (Direction)', 'cash', false));
+    });
     card.appendChild(channels);
     msg = actMsg(card);
     return card;

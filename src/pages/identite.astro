@@ -329,6 +329,7 @@ const etape = await getEntry('etapes', 'identite');
 
 <script is:inline src="/scripts/admission-tunnel.js?v=5"></script>
 <script is:inline src="/scripts/admission-profil.js"></script>
+<script is:inline src="/scripts/otp-digits.js?v=1"></script>
 <script is:inline>
 (function () {
   'use strict';
@@ -569,11 +570,23 @@ const etape = await getEntry('etapes', 'identite');
         } else {
           otpMessage('error', (res.error && res.error.message) || 'Code invalide. Vérifiez et réessayez.');
         }
-        digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
-        if (digits[0]) { digits[0].focus(); }
+        /* DEC-337 (garde-fou 2) : code refusé → cases vidées + focus 1ʳᵉ + auto RÉ-ARMÉ
+           (une NOUVELLE saisie complète re-validera automatiquement). */
+        if (otpCtl) { otpCtl.reset(); }
+        else {
+          digits.forEach(function (d) { d.value = ''; d.classList.remove('is-filled'); });
+          if (digits[0]) { digits[0].focus(); }
+        }
       }
     });
   });
+
+  /* DEC-337 — confort OTP : implémentation PARTAGÉE (otp-digits.js, aussi consommée par
+     /reprise). Auto-avance, backspace, collage réparti+validé, Entrée, auto-validation
+     one-shot au 6ᵉ (le compteur des 5 tentatives ne brûle jamais en silence). */
+  var otpCtl = window.OtpDigits ? window.OtpDigits.wire(digits, {
+    submit: function () { el.otpVerify.click(); }
+  }) : null;
 
   /* ---- Création du dossier (F1 : payload RÉEL) ---- */
   el.cta.addEventListener('click', function () {
@@ -648,58 +661,8 @@ const etape = await getEntry('etapes', 'identite');
 })();
 </script>
 
-<script is:inline>
-/* M4 — Auto-navigation OTP digits (avant + backspace) */
-(function () {
-  var digits = Array.prototype.slice.call(document.querySelectorAll('.otp-digit'));
-  if (!digits.length) return;
-
-  digits.forEach(function (el, i) {
-    el.addEventListener('input', function () {
-      el.value = el.value.replace(/[^0-9]/g, '').slice(0, 1);
-      if (el.value && i < digits.length - 1) {
-        digits[i + 1].focus();
-      }
-      /* Met à jour les classes visuelles */
-      digits.forEach(function (d) {
-        d.classList.toggle('is-filled', !!d.value);
-        d.classList.remove('is-cursor');
-      });
-      if (document.activeElement && document.activeElement.classList.contains('otp-digit')) {
-        document.activeElement.classList.add('is-cursor');
-      }
-    });
-
-    el.addEventListener('keydown', function (e) {
-      if (e.key === 'Backspace' && !el.value && i > 0) {
-        e.preventDefault();
-        digits[i - 1].value = '';
-        digits[i - 1].focus();
-        digits[i - 1].classList.remove('is-filled');
-      }
-    });
-
-    el.addEventListener('focus', function () {
-      digits.forEach(function (d) { d.classList.remove('is-cursor'); });
-      el.classList.add('is-cursor');
-    });
-
-    /* Coller le code complet d'un coup */
-    el.addEventListener('paste', function (e) {
-      var text = (e.clipboardData || window.clipboardData).getData('text') || '';
-      var nums = text.replace(/[^0-9]/g, '').slice(0, digits.length);
-      if (nums.length > 1) {
-        e.preventDefault();
-        digits.forEach(function (d, j) {
-          d.value = nums[j] || '';
-          d.classList.toggle('is-filled', !!d.value);
-        });
-        var next = Math.min(nums.length, digits.length - 1);
-        digits[next].focus();
-      }
-    });
-  });
-})();
-</script>
+<!-- M4 retiré (OUVERTURE-SOP) : l'auto-navigation OTP vit désormais dans
+     /scripts/otp-digits.js (DEC-337, implémentation partagée avec /reprise) — câblée
+     dans le script principal ci-dessus (otpCtl). -->
 
 </TunnelLayout>
