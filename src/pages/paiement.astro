@@ -211,42 +211,9 @@ const etape = await getEntry('etapes', 'paiement');
           <span class="kk-brand"><b>FedaPay</b><span class="kk-tag">SÉCURISÉ</span></span>
         </div>
         <div class="secure-body">
-          <div class="methods" role="radiogroup" aria-label="Moyen de paiement en ligne">
-            <label class="method is-active" data-m="mtn"><input type="radio" name="kkm" class="sr-only" checked /><svg class="ico-lg"><use href="#i-mobile"/></svg>MTN MoMo</label>
-            <label class="method" data-m="moov"><input type="radio" name="kkm" class="sr-only" /><svg class="ico-lg"><use href="#i-mobile"/></svg>Moov Money</label>
-            <label class="method" data-m="carte"><input type="radio" name="kkm" class="sr-only" /><svg class="ico-lg"><use href="#i-card"/></svg>Carte</label>
-          </div>
-
-          <div id="fields-momo" class="pay-fields">
-            <div class="em-field">
-              <label class="em-field-label" for="momo-num">Numéro Mobile Money</label>
-              <input type="tel" class="em-input" id="momo-num" inputmode="tel" placeholder="+229…" />
-            </div>
-            <div class="mm-help"><svg class="ico-sm"><use href="#i-mobile"/></svg><span>Vous recevrez une demande de confirmation <strong id="mm-op">MTN MoMo</strong> sur votre téléphone. Validez avec votre code secret.</span></div>
-          </div>
-
-          <div id="fields-carte" hidden class="pay-fields">
-            <div class="em-field">
-              <label class="em-field-label" for="cardnum">Numéro de carte</label>
-              <div class="card-number-wrap">
-                <input type="text" class="em-input" id="cardnum" inputmode="numeric" placeholder="0000 0000 0000 0000" autocomplete="cc-number" />
-                <span class="card-brands"><span class="brand-chip">VISA</span><span class="brand-chip">MC</span></span>
-              </div>
-            </div>
-            <div class="field-2">
-              <div class="em-field">
-                <label class="em-field-label" for="exp">Expiration</label>
-                <input type="text" class="em-input" id="exp" inputmode="numeric" placeholder="MM / AA" autocomplete="cc-exp" />
-              </div>
-              <div class="em-field">
-                <label class="em-field-label" for="cvc">CVC</label>
-                <input type="text" class="em-input" id="cvc" inputmode="numeric" placeholder="123" autocomplete="cc-csc" />
-              </div>
-            </div>
-            <div class="em-field">
-              <label class="em-field-label" for="holder">Nom sur la carte</label>
-              <input type="text" class="em-input" id="holder" autocomplete="cc-name" />
-            </div>
+          <div class="mm-help" style="font-size:var(--text-sm);color:var(--text-secondary)">
+            <svg class="ico-lg"><use href="#i-mobile"/></svg>
+            <span>Vous réglez de manière sécurisée <strong>directement via FedaPay</strong> — MTN&nbsp;MoMo, Moov&nbsp;Money ou carte bancaire. En cliquant sur <strong>Payer</strong>, la fenêtre de paiement FedaPay s'ouvre&nbsp;: vos informations de paiement y sont saisies et <strong>ne transitent jamais par LaNEM</strong>.</span>
           </div>
 
           <div class="webhook-note"><svg class="ico-sm"><use href="#i-shield"/></svg><span>Confirmation transmise par FedaPay et validée par nos serveurs (webhook). Votre candidature est soumise dès la confirmation du paiement.</span></div>
@@ -317,11 +284,6 @@ const etape = await getEntry('etapes', 'paiement');
   var sopCb = document.getElementById('sop-cb');
   var onlineCb = document.getElementById('online-consent-cb');
   var onlineCheck = document.getElementById('online-consent-check');
-
-  var methods = Array.prototype.slice.call(document.querySelectorAll('#panel-online .method'));
-  var fMomo = document.getElementById('fields-momo');
-  var fCarte = document.getElementById('fields-carte');
-  var mmOp = document.getElementById('mm-op');
 
   var AT = window.AdmissionTunnel;
   var ctx = AT.readCtx();
@@ -481,18 +443,6 @@ const etape = await getEntry('etapes', 'paiement');
     el.addEventListener('keydown', function (e) {
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); selectPath(el.dataset.path); }
     });
-  });
-
-  function selectMethod(m) {
-    methods.forEach(function (el) { el.classList.toggle('is-active', el.dataset.m === m); });
-    var isCarte = m === 'carte';
-    fMomo.hidden = isCarte;
-    fCarte.hidden = !isCarte;
-    if (m === 'mtn') mmOp.textContent = 'MTN MoMo';
-    if (m === 'moov') mmOp.textContent = 'Moov Money';
-  }
-  methods.forEach(function (el) {
-    el.addEventListener('click', function () { selectMethod(el.dataset.m); });
   });
 
   sopCb.addEventListener('change', function () {
