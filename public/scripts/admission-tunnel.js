@@ -309,9 +309,22 @@
     }, cb);
   }
 
-  /* LOT F (F4) : « retrouver mon dossier » — réponse UNIFORME côté back (anti-énumération). */
+  /* DEC-323/U : récupération par identité. Ces appels n'utilisent PAS saveDossier :
+     le jeton opaque reste uniquement dans la mémoire de /reprise et n'autorise que
+     la consultation read-only des dossiers explicitement listés par le serveur. */
   function realRecoverDossier(email, cb) {
     _post('public.recover_dossier', { email: email }, cb);
+  }
+
+  function realVerifyRecoveryOtp(email, otp, cb) {
+    _post('public.verify_recovery_otp', { email: email, otp: otp }, cb);
+  }
+
+  function realGetRecoveredDossier(recoveryToken, dossierId, cb) {
+    _get('public.get_recovered_dossier', {
+      recovery_token: recoveryToken,
+      dossier_id: dossierId
+    }, cb);
   }
 
   /* LOT G (G2/DAT-1) : droit à l'effacement — IRRÉVERSIBLE, token + OTP + confirm exigés. */
@@ -658,6 +671,8 @@
       resubmitComplement: realResubmitComplement,
       candidateResubmit: realCandidateResubmit,
       recoverDossier: realRecoverDossier,
+      verifyRecoveryOtp: realVerifyRecoveryOtp,
+      getRecoveredDossier: realGetRecoveredDossier,
       requestDataDeletion: realRequestDataDeletion,
       enrollmentPay: realEnrollmentPay,
       processPayment: processPayment,

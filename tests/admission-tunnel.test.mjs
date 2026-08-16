@@ -60,13 +60,44 @@ test('clearDossier : purge resume + snapshot', () => {
   assert.equal(AT.getIdentiteSnapshot(), null);
 });
 
-test('snapshot identité : aller-retour JSON', () => {
+test('snapshot identité : aller-retour JSON avec date de naissance', () => {
   _store.clear();
-  AT.saveIdentiteSnapshot({ prenom: 'Koffi', nom: 'D', email: 'k@x.bj', tel: '+22990', niveau: 'L1', datebac: '2024-07' });
+  AT.saveIdentiteSnapshot({ prenom: 'Koffi', nom: 'D', email: 'k@x.bj', tel: '+22990', dateNaissance: '2000-01-02', niveau: 'L1', datebac: '2024-07' });
   const s = AT.getIdentiteSnapshot();
   assert.equal(s.prenom, 'Koffi');
   assert.equal(s.email, 'k@x.bj');
+  assert.equal(s.dateNaissance, '2000-01-02');
   assert.equal(s.niveau, 'L1');
+});
+
+// ── DEC-323 : jeton de consultation opaque, jamais ancré localement ───────────
+
+test('verifyRecoveryOtp appelle le nouvel endpoint sans toucher à l’ancrage dossier', async () => {
+  _store.clear();
+  let request;
+  globalThis.fetch = async (url, options) => {
+    request = { url, options };
+    return { json: async () => ({ message: { ok: true, data: { recovery_token: 'OPAQUE', dossiers: [] } } }) };
+  };
+  const response = await new Promise(resolve => AT.api.verifyRecoveryOtp('ama@x.bj', '123456', resolve));
+  assert.equal(response.ok, true);
+  assert.match(request.url, /public\.verify_recovery_otp$/);
+  assert.deepEqual(JSON.parse(request.options.body), { email: 'ama@x.bj', otp: '123456' });
+  assert.equal(AT.getDossierId(), '');
+  assert.equal(AT.getDossierToken(), '');
+});
+
+test('getRecoveredDossier transmet seulement jeton opaque + dossier autorisé', async () => {
+  let requestUrl;
+  globalThis.fetch = async url => {
+    requestUrl = url;
+    return { json: async () => ({ message: { ok: true, data: { dossier_id: 'CAN-2' } } }) };
+  };
+  const response = await new Promise(resolve => AT.api.getRecoveredDossier('OPAQUE 30m', 'CAN-2', resolve));
+  assert.equal(response.data.dossier_id, 'CAN-2');
+  assert.match(requestUrl, /public\.get_recovered_dossier\?/);
+  assert.match(requestUrl, /recovery_token=OPAQUE%2030m/);
+  assert.match(requestUrl, /dossier_id=CAN-2/);
 });
 
 // ── Palier 3-modifié : capture + purge de l'OTP du lien ─────────────────────────

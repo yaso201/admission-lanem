@@ -39,6 +39,19 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 
   .recover-row { display: flex; gap: var(--space-4); margin-top: var(--space-5); flex-wrap: wrap; }
   .recover-row .em-input { flex: 1; min-width: 220px; }
+  .recovery-otp[hidden], .recovery-results[hidden], .recovery-detail[hidden] { display: none; }
+  .recovery-otp { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
+  .recovery-list { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+  .recovery-item { width: 100%; padding: var(--space-5); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); color: var(--text-primary); text-align: left; cursor: pointer; }
+  .recovery-item:hover, .recovery-item:focus-visible { border-color: var(--violet); box-shadow: var(--shadow-focus); }
+  .recovery-item strong { display: block; font-family: var(--font-mono); color: var(--violet); }
+  .recovery-item span { display: block; margin-top: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+  .recovery-detail { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
+  .recovery-detail h2, .recovery-results h2 { margin-top: var(--space-6); font-family: var(--font-display); font-size: var(--text-xl); }
+  .recovery-facts { display: grid; grid-template-columns: minmax(120px, .7fr) 1.3fr; gap: var(--space-3) var(--space-5); margin-top: var(--space-5); }
+  .recovery-facts dt { color: var(--text-tertiary); font-size: var(--text-sm); }
+  .recovery-facts dd { margin: 0; color: var(--text-primary); font-weight: 600; overflow-wrap: anywhere; }
+  .recovery-pieces { margin: var(--space-5) 0 0; padding-left: var(--space-6); color: var(--text-secondary); }
 </style>
 
 <svg class="svg-sprites" aria-hidden="true">
@@ -71,25 +84,49 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     </div>
   </div>
 
-  <!-- Mode B : « retrouver mon dossier » par e-mail (recover_dossier, anti-énumération) -->
+  <!-- Mode B : DEC-323/U — adresse → OTP → tous les dossiers → détail read-only -->
   <div class="card" id="card-recover" hidden>
-    <h1>Retrouver mon dossier</h1>
-    <p class="sub">Indiquez l'adresse e-mail utilisée pour votre candidature. Si un dossier actif
-      lui correspond, vous recevrez un lien de reprise par e-mail.</p>
+    <h1>Retrouver mes dossiers</h1>
+    <p class="sub">Indiquez l'adresse e-mail utilisée pour vos candidatures. Un code à usage unique
+      permet de consulter pendant 30 minutes tous les dossiers associés, actifs comme clos.</p>
     <div class="recover-row">
       <input class="em-input" id="recover-email" type="email" inputmode="email" autocomplete="email" placeholder="votre@email.com" />
-      <button type="button" class="em-btn em-btn--primary" id="btn-recover">Recevoir le lien</button>
+      <button type="button" class="em-btn em-btn--primary" id="btn-recover">Recevoir un code</button>
     </div>
     <div class="msg" id="recover-msg" role="status" aria-live="polite"></div>
+    <div class="recovery-otp" id="recovery-otp" hidden>
+      <p class="sub">Saisissez le code à 6 chiffres reçu par e-mail.</p>
+      <div class="otp-digits" role="group" aria-label="Code de consultation à 6 chiffres">
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 1" />
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Chiffre 2" />
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Chiffre 3" />
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Chiffre 4" />
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Chiffre 5" />
+        <input type="text" class="otp-digit recovery-otp-digit" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Chiffre 6" />
+      </div>
+      <button type="button" class="em-btn em-btn--primary" id="btn-recovery-verify">Vérifier le code</button>
+      <div class="msg" id="recovery-otp-msg" role="status" aria-live="polite"></div>
+    </div>
+    <section class="recovery-results" id="recovery-results" hidden aria-live="polite">
+      <h2>Vos candidatures</h2>
+      <p class="sub" id="recovery-count"></p>
+      <div class="recovery-list" id="recovery-list"></div>
+    </section>
+    <section class="recovery-detail" id="recovery-detail" hidden>
+      <button type="button" class="em-btn em-btn--ghost" id="recovery-back">Retour à la liste</button>
+      <h2 id="recovery-detail-title">Dossier</h2>
+      <div id="recovery-detail-body"></div>
+      <div class="msg" id="recovery-detail-msg" role="status" aria-live="polite"></div>
+    </section>
   </div>
 </main>
 
-<script is:inline src="/scripts/admission-tunnel.js?v=2"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=3"></script>
 <script is:inline>
 (function () {
   'use strict';
   var AT = window.AdmissionTunnel;
-  var digits = Array.prototype.slice.call(document.querySelectorAll('.otp-digit'));
+  var digits = Array.prototype.slice.call(document.querySelectorAll('#card-otp .otp-digit'));
   var cardOtp = document.getElementById('card-otp');
   var cardRecover = document.getElementById('card-recover');
   var otpMsg = document.getElementById('otp-msg');
@@ -192,10 +229,100 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     });
   });
 
-  /* ---- Mode B : recovery par e-mail ---- */
+  /* ---- Mode B : récupération d'identité read-only (jeton en mémoire seulement) ---- */
   var recoverMsg = document.getElementById('recover-msg');
+  var recoverEmail = document.getElementById('recover-email');
+  var recoveryOtp = document.getElementById('recovery-otp');
+  var recoveryOtpMsg = document.getElementById('recovery-otp-msg');
+  var recoveryDigits = Array.prototype.slice.call(document.querySelectorAll('.recovery-otp-digit'));
+  var recoveryResults = document.getElementById('recovery-results');
+  var recoveryList = document.getElementById('recovery-list');
+  var recoveryDetail = document.getElementById('recovery-detail');
+  var recoveryToken = null; /* volontairement ni localStorage ni sessionStorage */
+
+  recoveryDigits.forEach(function (field, index) {
+    field.addEventListener('input', function () {
+      field.value = field.value.replace(/[^0-9]/g, '').slice(0, 1);
+      field.classList.toggle('is-filled', !!field.value);
+      if (field.value && index < recoveryDigits.length - 1) { recoveryDigits[index + 1].focus(); }
+    });
+    field.addEventListener('keydown', function (event) {
+      if (event.key === 'Backspace' && !field.value && index > 0) { recoveryDigits[index - 1].focus(); }
+    });
+    field.addEventListener('paste', function (event) {
+      var value = (event.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+      if (value.length > 1) {
+        event.preventDefault();
+        recoveryDigits.forEach(function (item, i) { item.value = value[i] || ''; item.classList.toggle('is-filled', !!item.value); });
+      }
+    });
+  });
+
+  function addFact(list, label, value) {
+    var dt = document.createElement('dt'); dt.textContent = label;
+    var dd = document.createElement('dd'); dd.textContent = value || 'Non renseigné';
+    list.appendChild(dt); list.appendChild(dd);
+  }
+
+  function renderRecoveredDetail(data) {
+    var identity = data.identite || {}, programme = data.programme || {}, session = data.session || {};
+    var body = document.getElementById('recovery-detail-body');
+    body.textContent = '';
+    var facts = document.createElement('dl'); facts.className = 'recovery-facts';
+    addFact(facts, 'Statut', data.statut);
+    addFact(facts, 'Programme', programme.label || programme.code);
+    addFact(facts, 'Session', session.label || session.id);
+    addFact(facts, 'Candidat', [identity.prenom, identity.nom].filter(Boolean).join(' '));
+    addFact(facts, 'Date de naissance', identity.date_naissance);
+    addFact(facts, 'E-mail', identity.email);
+    addFact(facts, 'Téléphone', identity.tel);
+    body.appendChild(facts);
+    var pieces = document.createElement('ul'); pieces.className = 'recovery-pieces';
+    (data.pieces || []).forEach(function (piece) {
+      var li = document.createElement('li');
+      li.textContent = (piece.label || piece.code) + ' — ' + (piece.statut_reel || piece.statut || '—');
+      pieces.appendChild(li);
+    });
+    if (pieces.children.length) { body.appendChild(pieces); }
+    document.getElementById('recovery-detail-title').textContent = 'Dossier ' + data.dossier_id;
+    recoveryResults.hidden = true;
+    recoveryDetail.hidden = false;
+  }
+
+  function openRecoveredDossier(dossierId) {
+    msg(document.getElementById('recovery-detail-msg'), '', 'Chargement…');
+    AT.api.getRecoveredDossier(recoveryToken, dossierId, function (res) {
+      if (res.ok) {
+        msg(document.getElementById('recovery-detail-msg'), '', '');
+        renderRecoveredDetail(res.data);
+      } else {
+        msg(document.getElementById('recovery-detail-msg'), 'error',
+          (res.error && res.error.message) || 'Consultation impossible. Recommencez la vérification.');
+      }
+    });
+  }
+
+  function renderRecoveryList(items) {
+    recoveryList.textContent = '';
+    document.getElementById('recovery-count').textContent = items.length +
+      ' dossier' + (items.length > 1 ? 's' : '') + ' associé' + (items.length > 1 ? 's' : '') + ' à cette identité.';
+    items.forEach(function (item) {
+      var button = document.createElement('button'); button.type = 'button'; button.className = 'recovery-item';
+      var title = document.createElement('strong'); title.textContent = item.dossier_id;
+      var meta = document.createElement('span');
+      meta.textContent = ((item.programme || {}).label || (item.programme || {}).code || 'Programme') +
+        ' · ' + ((item.session || {}).label || (item.session || {}).id || 'Session') + ' · ' + (item.statut || '—');
+      button.appendChild(title); button.appendChild(meta);
+      button.addEventListener('click', function () { openRecoveredDossier(item.dossier_id); });
+      recoveryList.appendChild(button);
+    });
+    recoveryOtp.hidden = true;
+    recoveryDetail.hidden = true;
+    recoveryResults.hidden = false;
+  }
+
   document.getElementById('btn-recover').addEventListener('click', function () {
-    var email = document.getElementById('recover-email').value.trim();
+    var email = recoverEmail.value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       msg(recoverMsg, 'error', 'Adresse e-mail invalide.');
       return;
@@ -203,9 +330,35 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     msg(recoverMsg, '', 'Envoi…');
     AT.api.recoverDossier(email, function (res) {
       /* Réponse UNIFORME du back (anti-énumération) — on relaie son message tel quel. */
-      if (res.ok) { msg(recoverMsg, 'ok', (res.data && res.data.message) || 'Si un dossier actif correspond, un lien vient d’être envoyé.'); }
+      if (res.ok) {
+        msg(recoverMsg, 'ok', (res.data && res.data.message) || "Si cette adresse porte des candidatures, un code vient d'être envoyé");
+        recoveryOtp.hidden = false;
+        recoveryDigits.forEach(function (field) { field.value = ''; field.classList.remove('is-filled'); });
+        if (recoveryDigits[0]) { recoveryDigits[0].focus(); }
+      }
       else { msg(recoverMsg, 'error', (res.error && res.error.message) || 'Demande impossible pour le moment. Réessayez plus tard.'); }
     });
+  });
+
+  document.getElementById('btn-recovery-verify').addEventListener('click', function () {
+    var code = recoveryDigits.map(function (field) { return field.value; }).join('');
+    if (!/^\d{6}$/.test(code)) { msg(recoveryOtpMsg, 'error', 'Saisissez les 6 chiffres du code.'); return; }
+    msg(recoveryOtpMsg, '', 'Vérification…');
+    AT.api.verifyRecoveryOtp(recoverEmail.value.trim(), code, function (res) {
+      if (res.ok && res.data && res.data.recovery_token) {
+        recoveryToken = res.data.recovery_token;
+        msg(recoveryOtpMsg, 'ok', 'Adresse vérifiée.');
+        renderRecoveryList(res.data.dossiers || []);
+      } else {
+        recoveryToken = null;
+        msg(recoveryOtpMsg, 'error', (res.error && res.error.message) || 'Code invalide ou expiré.');
+      }
+    });
+  });
+
+  document.getElementById('recovery-back').addEventListener('click', function () {
+    recoveryDetail.hidden = true;
+    recoveryResults.hidden = false;
   });
 
   /* Palier 3-modifié : OTP pré-saisi depuis le lien → vérification automatique.

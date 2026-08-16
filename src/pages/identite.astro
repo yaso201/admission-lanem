@@ -202,6 +202,11 @@ const etape = await getEntry('etapes', 'identite');
           <input type="text" class="em-input" id="nom" autocomplete="family-name" required />
         </div>
         <div class="em-field col-full">
+          <label class="em-field-label" for="date-naissance">Date de naissance <span class="em-required" aria-hidden="true">*</span></label>
+          <input class="em-input" id="date-naissance" type="date" autocomplete="bday" aria-describedby="date-naissance-help" required />
+          <span class="em-field-help" id="date-naissance-help">Vous devez avoir entre 14 et 60 ans inclus à la date du dépôt.</span>
+        </div>
+        <div class="em-field col-full">
           <label class="em-field-label" for="email">Email <span class="em-required" aria-hidden="true">*</span></label>
           <input class="em-input" id="email" type="email" inputmode="email" autocomplete="email" required />
           <span class="em-field-help">Le code de vérification et la décision d'admission seront envoyés à cette adresse.</span>
@@ -322,7 +327,7 @@ const etape = await getEntry('etapes', 'identite');
 </div>
 
 
-<script is:inline src="/scripts/admission-tunnel.js?v=2"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=3"></script>
 <script is:inline src="/scripts/admission-profil.js"></script>
 <script is:inline>
 (function () {
@@ -336,6 +341,7 @@ const etape = await getEntry('etapes', 'identite');
     nom: document.getElementById('nom'),
     email: document.getElementById('email'),
     tel: document.getElementById('tel'),
+    dateNaissance: document.getElementById('date-naissance'),
     niveau: document.getElementById('niveau'),
     datebac: document.getElementById('datebac'),
     consentDp: document.getElementById('consent-dp'),
@@ -426,10 +432,20 @@ const etape = await getEntry('etapes', 'identite');
   }
 
   /* ---- Validation + gate ---- */
+  function birthDateValid() {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(el.dateNaissance.value)) { return false; }
+    var born = new Date(el.dateNaissance.value + 'T12:00:00');
+    if (isNaN(born.getTime())) { return false; }
+    var today = new Date();
+    var age = today.getFullYear() - born.getFullYear();
+    if (today.getMonth() < born.getMonth() ||
+        (today.getMonth() === born.getMonth() && today.getDate() < born.getDate())) { age -= 1; }
+    return age >= 14 && age <= 60;
+  }
   function formValid() {
     var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.email.value.trim());
     var telOk = (el.tel.value.replace(/[^0-9+]/g, '').length >= 8);
-    return el.prenom.value.trim() && el.nom.value.trim() && emailOk && telOk &&
+    return el.prenom.value.trim() && el.nom.value.trim() && birthDateValid() && emailOk && telOk &&
       el.niveau.value && el.datebac.value && el.consentDp.checked && el.consentCgv.checked;
   }
   var phase = 'form';
@@ -446,9 +462,16 @@ const etape = await getEntry('etapes', 'identite');
     }
   }
   ['input', 'change'].forEach(function (evt) {
-    [el.prenom, el.nom, el.email, el.tel, el.niveau, el.consentDp, el.consentCgv].forEach(function (f) {
+    [el.prenom, el.nom, el.dateNaissance, el.email, el.tel, el.niveau, el.consentDp, el.consentCgv].forEach(function (f) {
       f.addEventListener(evt, refreshGate);
     });
+  });
+  el.dateNaissance.addEventListener('change', function () {
+    if (el.dateNaissance.value && !birthDateValid()) {
+      showFormError('La date de naissance doit correspondre à un âge compris entre 14 et 60 ans.');
+    } else if (el.formMsg.textContent.indexOf('date de naissance') !== -1) {
+      el.formMsg.textContent = '';
+    }
   });
   el.email.addEventListener('input', function () { el.otpDest.textContent = el.email.value.trim() || '—'; });
   el.tel.addEventListener('input', function () { el.telDest.textContent = el.tel.value.trim() || '—'; });
@@ -485,7 +508,7 @@ const etape = await getEntry('etapes', 'identite');
 
   function enterOtpPhase(sent) {
     phase = 'otp';
-    [el.prenom, el.nom, el.email, el.tel, el.niveau, el.datebac].forEach(function (f) { f.setAttribute('readonly', ''); });
+    [el.prenom, el.nom, el.dateNaissance, el.email, el.tel, el.niveau, el.datebac].forEach(function (f) { f.setAttribute('readonly', ''); });
     el.niveau.setAttribute('disabled', '');
     el.consentDp.setAttribute('disabled', '');
     el.consentCgv.setAttribute('disabled', '');
@@ -566,6 +589,7 @@ const etape = await getEntry('etapes', 'identite');
         nom: el.nom.value.trim(),
         email: el.email.value.trim(),
         tel: el.tel.value.trim(),
+        date_of_birth: el.dateNaissance.value,
         date_bac: el.datebac.value ? el.datebac.value + '-01' : null
       },
       consent_data_processing: el.consentDp.checked,
@@ -578,6 +602,7 @@ const etape = await getEntry('etapes', 'identite');
       AT.saveIdentiteSnapshot({
         prenom: el.prenom.value.trim(), nom: el.nom.value.trim(),
         email: el.email.value.trim(), tel: el.tel.value.trim(),
+        dateNaissance: el.dateNaissance.value,
         niveau: el.niveau.value, datebac: el.datebac.value
       });
     }
@@ -606,6 +631,7 @@ const etape = await getEntry('etapes', 'identite');
     if (snap) {
       el.prenom.value = snap.prenom || ''; el.nom.value = snap.nom || '';
       el.email.value = snap.email || ''; el.tel.value = snap.tel || '';
+      el.dateNaissance.value = snap.dateNaissance || '';
       el.datebac.value = snap.datebac || '';
       el.otpDest.textContent = snap.email || 'votre adresse e-mail';
       el.telDest.textContent = snap.tel || '—';
