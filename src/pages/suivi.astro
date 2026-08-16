@@ -506,14 +506,14 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
             return;
           }
           var desc = res.data || {};
-          /* LOT KKIAPAY : canal online avec widget réel (mode ≠ mock) — le webhook fait
+          /* Canal FedaPay online avec widget réel (mode ≠ mock) — le webhook fait
              foi, on attend la bascule ACC→INS avant de recharger. DEV mock : inchangé. */
           if (channel === 'online' && desc.mode && desc.mode !== 'mock' && desc.public_key) {
-            setMsg(msg, '', 'Paiement sécurisé KkiaPay…');
-            AT.kkiapay.launch(desc, {
+            setMsg(msg, '', 'Paiement sécurisé FedaPay…');
+            AT.payment.launch(desc, {
               success: function () {
                 setMsg(msg, 'ok', 'Paiement transmis — confirmation en cours…');
-                AT.kkiapay.pollDossierStatus(['INS'], function () { window.location.reload(); });
+                AT.payment.pollDossierStatus(['INS'], function () { window.location.reload(); });
               },
               failed: function () {
                 b.removeAttribute('disabled');

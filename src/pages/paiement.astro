@@ -91,7 +91,7 @@ const etape = await getEntry('etapes', 'paiement');
   .pay-panel { display: none; }
   .pay-panel.is-active { display: block; }
 
-  /* ---- Widget KkiaPay ---- */
+  /* ---- Widget FedaPay ---- */
   .kk-brand { margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-tertiary); }
   .kk-brand b { color: var(--violet); font-weight: 700; font-family: var(--font-sans); letter-spacing: -0.01em; }
   .kk-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; color: var(--accent-700); background: var(--accent-100); border-radius: 3px; padding: 2px 5px; }
@@ -190,7 +190,7 @@ const etape = await getEntry('etapes', 'paiement');
         <span class="pp-radio"><svg><use href="#i-check"/></svg></span>
         <span class="pay-path-body">
           <span class="pay-path-name"><svg class="ico"><use href="#i-mobile"/></svg>En ligne</span>
-          <span class="pay-path-sub">MTN MoMo, Moov Money ou carte — via KkiaPay. Confirmation immédiate.</span>
+          <span class="pay-path-sub">MTN MoMo, Moov Money ou carte — via FedaPay. Confirmation immédiate.</span>
         </span>
       </div>
       <div class="pay-path" data-path="sop" role="radio" aria-checked="false" tabindex="0">
@@ -202,13 +202,13 @@ const etape = await getEntry('etapes', 'paiement');
       </div>
     </div>
 
-    <!-- Panneau : en ligne (KkiaPay) -->
+    <!-- Panneau : en ligne (FedaPay) -->
     <div class="pay-panel is-active" id="panel-online">
       <div class="secure">
         <div class="secure-head">
           <svg class="ico-sm"><use href="#i-lock"/></svg>
           <strong>Zone sécurisée</strong>&nbsp;— paiement traité par l'agrégateur
-          <span class="kk-brand"><b>KkiaPay</b><span class="kk-tag">SANDBOX</span></span>
+          <span class="kk-brand"><b>FedaPay</b><span class="kk-tag">SÉCURISÉ</span></span>
         </div>
         <div class="secure-body">
           <div class="methods" role="radiogroup" aria-label="Moyen de paiement en ligne">
@@ -249,7 +249,7 @@ const etape = await getEntry('etapes', 'paiement');
             </div>
           </div>
 
-          <div class="webhook-note"><svg class="ico-sm"><use href="#i-shield"/></svg><span>Confirmation transmise par KkiaPay et validée par nos serveurs (webhook). Votre candidature est soumise dès la confirmation du paiement.</span></div>
+          <div class="webhook-note"><svg class="ico-sm"><use href="#i-shield"/></svg><span>Confirmation transmise par FedaPay et validée par nos serveurs (webhook). Votre candidature est soumise dès la confirmation du paiement.</span></div>
 
           <label class="sop-check" id="online-consent-check" style="margin-top:12px">
             <input type="checkbox" class="em-check-input" id="online-consent-cb" />
@@ -294,7 +294,7 @@ const etape = await getEntry('etapes', 'paiement');
 
 <div class="action-bar">
   <div class="action-bar-inner">
-    <span class="ab-secure" id="ab-secure"><svg class="ico-sm"><use href="#i-lock"/></svg>Connexion chiffrée · confirmation immédiate par KkiaPay</span>
+    <span class="ab-secure" id="ab-secure"><svg class="ico-sm"><use href="#i-lock"/></svg>Connexion chiffrée · confirmation immédiate par FedaPay</span>
     <div class="ab-right">
       <button type="button" class="em-btn em-btn--primary em-btn--lg" id="pay-cta">Payer<svg class="ico"><use href="#i-caretright"/></svg></button>
     </div>
@@ -406,7 +406,7 @@ const etape = await getEntry('etapes', 'paiement');
     }
   }
 
-  /* LOT KKIAPAY : widget réel — le webhook (re-vérifié serveur) fait foi, le listener
+  /* Widget FedaPay : widget réel — le webhook (re-vérifié serveur) fait foi, le listener
      succès du widget ne fait qu'ouvrir l'attente de confirmation (poll BRO/SOP→SOU). */
   function payOnlineDone(res, target) {
     if (!res.ok) { payDone(res, target); return; }
@@ -448,7 +448,7 @@ const etape = await getEntry('etapes', 'paiement');
     if (current === 'online') {
       cta.innerHTML = ctaHTML(fraisLabel ? 'Payer ' + fraisLabel : 'Payer');
       abSecure.querySelector('use').setAttribute('href', '#i-lock');
-      abSecure.lastChild.textContent = 'Connexion chiffrée · confirmation immédiate par KkiaPay';
+      abSecure.lastChild.textContent = 'Connexion chiffrée · confirmation immédiate par FedaPay';
       cta.onclick = function () {
         cta.setAttribute('disabled', '');
         AT.api.processPayment('success', function (res) { payOnlineDone(res, '/paiement-accepte'); }, { consentRefund: consentOk() });

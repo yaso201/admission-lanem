@@ -6,7 +6,7 @@ points:
     titre: "Le paiement vaut soumission"
     detail: "Votre candidature est transmise d\xE8s le paiement confirm\xE9."
   - icon: i-shield
-    titre: "S\xE9curis\xE9 via KkiaPay"
+    titre: "S\xE9curis\xE9 via FedaPay"
     detail: "MTN MoMo, Moov Money ou carte bancaire."
   - icon: i-envelope
     titre: "Re\xE7u par email"
