@@ -54,7 +54,7 @@ test('génère les 4 .md dérivés (contenu + version du back) + le manifeste', 
   const cgv = await readFile(join(contentDir, 'cgv.md'), 'utf8');
   assert.match(cgv, /Texte CGV depuis le back\./);   // corps = content_text back
   assert.match(cgv, /version: "V1"/);                 // version = back
-  assert.match(cgv, /titre: "Conditions générales de vente"/); // titre = carte présentation
+  assert.match(cgv, /titre: "Conditions générales de candidature en ligne"/); // titre = carte présentation (legal-map.mjs)
 
   // le type non mappé (SIMULATION_DISCLAIMER) ne génère PAS de page
   const entries = await readdir(contentDir);

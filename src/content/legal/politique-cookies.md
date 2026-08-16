@@ -1,7 +1,7 @@
 ---
 titre: "Politique de gestion des cookies et traceurs"
-date_effet: "12 août 2026"
-version: "1.0"
+date_effet: "17 août 2026"
+version: "1.1"
 ---
 La présente politique décrit les cookies et autres traceurs utilisés sur le site et la plateforme de candidature de LA NOUVELLE ECOLE DES METIERS.
 
@@ -84,7 +84,7 @@ Certaines ressources nécessaires à l’affichage ou au fonctionnement du servi
 | Ressource | Prestataire | Finalité | Traceur déposé |
 |---|---|---|---|
 | Polices de caractères | Google LLC (États-Unis) | Affichage typographique des pages | Aucun |
-| Module de paiement | KkiaPay (Bénin) | Règlement en ligne des frais — chargé **uniquement** lorsque l’utilisateur engage un paiement | Aucun |
+| Module de paiement | FedaPay (Bénin) | Règlement en ligne des frais — chargé **uniquement** lorsque l’utilisateur engage un paiement | Aucun |
 
 Les transferts correspondants sont décrits dans le document **Transferts de données**.
 
