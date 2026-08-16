@@ -12,13 +12,15 @@
  * en bas de page.
  */
 import { ecole } from '../config/ecole';
+import pkg from '../../package.json';
 const { identity, legalLinks } = ecole;
 const year = new Date().getFullYear();
+const appVersion = pkg.version;
 ---
 
 <footer class="fls">
   <div class="fls-inner">
-    <span class="fls-copy">© {year} {identity.name}</span>
+    <span class="fls-copy">© {year} {identity.name} · Version {appVersion}</span>
     <nav class="fls-links" aria-label="Informations légales">
       {legalLinks.map((l, i) => (
         <Fragment>
