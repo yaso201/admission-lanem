@@ -105,16 +105,35 @@
      une saisie d'OTP peut s'abonner via AT.onTokenExpired. */
   function _handleTokenExpired(payload, cb) {
     var hook = global.AdmissionTunnel && global.AdmissionTunnel.onTokenExpired;
+    /* A3-FIX E-04 : n'annoncer l'envoi du code QUE si request_otp a réellement réussi.
+       L'ancienne version avalait toute erreur (.catch vide) puis émettait toujours
+       OTP_RESENT — mensonge sur échec réseau/403/429. On inspecte la réponse ;
+       succès → OTP_RESENT + hook (bascule saisie OTP) ; échec → OTP_RESEND_FAILED
+       actionnable (le hook n'est PAS déclenché : aucun code à saisir). */
+    function fail(message) {
+      cb({ ok: false, data: null, error: { code: 'OTP_RESEND_FAILED', message: message } });
+    }
     fetch(_apiUrl('public.request_otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ dossier_id: getDossierId(), token: getDossierToken() })
-    }).catch(function () {}).finally(function () {
-      if (typeof hook === 'function') { hook(payload); }
-      cb({ ok: false, data: null, error: {
-        code: 'OTP_RESENT',
-        message: 'Votre lien a expiré. Un nouveau code vous a été envoyé : saisissez-le pour reprendre.'
-      } });
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (json) {
+      var p = (json && json.message !== undefined) ? json.message : json;
+      if (p && p.ok) {
+        if (typeof hook === 'function') { hook(payload); }
+        cb({ ok: false, data: null, error: {
+          code: 'OTP_RESENT',
+          message: 'Votre lien a expiré. Un nouveau code vous a été envoyé : saisissez-le pour reprendre.'
+        } });
+      } else {
+        fail((p && p.error && p.error.message) ||
+          "Votre lien a expiré et l'envoi du code a échoué. Réessayez, ou utilisez « Retrouver mes dossiers ».");
+      }
+    })
+    .catch(function () {
+      fail("Votre lien a expiré et le serveur est injoignable. Vérifiez votre connexion et réessayez.");
     });
   }
 
