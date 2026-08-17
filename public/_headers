@@ -1,0 +1,17 @@
+# SEC-1 (faille 8) — en-têtes de sécurité, front applicant (Cloudflare Pages).
+# Actifs (bloquants) : X-Frame-Options, HSTS, nosniff, Referrer-Policy.
+# CSP en Report-Only (DEC #3) : observe sans casser le paiement/tunnel ; le mode bloquant est un
+# lot ultérieur, après lecture des rapports (notamment les hôtes exacts du checkout FedaPay et de
+# la CMS /admin). Allowlist établie par OBSERVATION du runtime tunnel (layouts + admission-tunnel.js) :
+#   - polices Google : fonts.googleapis.com (CSS) + fonts.gstatic.com (woff2)
+#   - FedaPay : cdn.fedapay.com (checkout.js) + process.fedapay.com (checkout) — paiement actuellement
+#     désactivé (online_payment_enabled=0) : à confirmer sur un vrai paiement avant passage bloquant
+#   - API : api-admissions.lanem.bj (fetch)
+# 'unsafe-inline' script/style : scripts d'amorçage et styles scoped Astro sans nonce (durcissement
+# par nonce/hash = lot bloquant ultérieur). /admin (Sveltia CMS) générera des rapports (GitHub) — normal.
+/*
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy-Report-Only: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://cdn.fedapay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api-admissions.lanem.bj https://cdn.fedapay.com https://process.fedapay.com; frame-src https://process.fedapay.com; form-action 'self'
