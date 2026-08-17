@@ -713,11 +713,6 @@
     resolveStep: resolveStep,
     /* PAIEMENT-FEDAPAY : checkout + attente webhook (paiement.astro frais 1, suivi.astro frais 2). */
     payment: { launch: launchPayment, pollDossierStatus: pollDossierStatus },
-    /* ⚠️ Alias historique TROMPEUR : `AT.kkiapay` lance désormais du FEDAPAY (le nom MENT).
-       Conservé UNIQUEMENT pour compat `suivi.astro` (frais 2), hors write-set de ce lot.
-       INSTRUCTION DE REPRISE : renommer en `AT.payment` quand suivi.astro entrera dans un
-       write-set, puis supprimer cet alias. — PAIEMENT-FEDAPAY */
-    kkiapay: { launch: launchPayment, pollDossierStatus: pollDossierStatus },
     /* Hook optionnel : une page avec UI de saisie OTP peut intercepter TOKEN_EXPIRED. */
     onTokenExpired: null,
     /* Accès direct si besoin (debug, tests) */
