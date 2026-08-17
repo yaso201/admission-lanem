@@ -37,7 +37,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
 
   .dossier-pill { display: inline-flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); padding: var(--space-3) var(--space-4); background: var(--violet-soft); color: var(--violet); border-radius: var(--radius-full); font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700; }
 
-  .recover-row { display: flex; gap: var(--space-4); margin-top: var(--space-5); flex-wrap: wrap; }
+  .recover-label { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); margin-top: var(--space-5); }
+  .recover-row { display: flex; gap: var(--space-4); margin-top: var(--space-2); flex-wrap: wrap; }
   .recover-row .em-input { flex: 1; min-width: 220px; }
   .recovery-otp[hidden], .recovery-results[hidden], .recovery-detail[hidden] { display: none; }
   .recovery-otp { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
@@ -95,6 +96,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     <h1>Retrouver mes dossiers</h1>
     <p class="sub">Indiquez l'adresse e-mail utilisée pour vos candidatures. Un code à usage unique
       permet de consulter pendant 30 minutes tous les dossiers associés, actifs comme clos.</p>
+    <label class="recover-label" for="recover-email">Adresse e-mail</label>
     <div class="recover-row">
       <input class="em-input" id="recover-email" type="email" inputmode="email" autocomplete="email" placeholder="votre@email.com" />
       <button type="button" class="em-btn em-btn--primary" id="btn-recover">Recevoir un code</button>

@@ -47,7 +47,11 @@ const etape = await getEntry('etapes', 'bourses');
   .r-line.muted { color: rgba(255,255,255,0.5); }
   .r-line.muted .lab, .r-line.muted .val { color: rgba(255,255,255,0.45); text-decoration: line-through; }
   .r-line.muted .tagi { text-decoration: none; font-size: var(--text-2xs); color: rgba(255,255,255,0.55); margin-left: 6px; }
-  .r-empty { font-size: var(--text-sm); color: rgba(255,255,255,0.55); padding: 6px 0; font-style: italic; }
+  /* A11Y-1 (trouvaille axe hors 7 items) : .r-empty sert DEUX contextes — le panneau #cats CLAIR
+     (défaut → texte encre lisible) et le panneau reçu SOMBRE (.receipt → blanc-alpha). Le blanc
+     unique le rendait invisible sur fond clair (contraste 1,02). */
+  .r-empty { font-size: var(--text-sm); color: var(--text-secondary); padding: 6px 0; font-style: italic; }
+  .receipt .r-empty { color: rgba(255,255,255,0.78); }
   .r-div { height: 1px; background: rgba(255,255,255,0.18); margin: var(--space-4) 0; }
   .r-reduc { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
   .r-reduc .lab { font-size: var(--text-sm); font-weight: 600; color: #fff; }
@@ -249,13 +253,13 @@ const etape = await getEntry('etapes', 'bourses');
   <div>
     <div class="sec-kicker"><span class="n">1</span>Vos bourses</div>
 
-    <div class="tabs" role="tablist">
-      <button type="button" class="tab-btn is-active" data-tab="select" role="tab" aria-selected="true"><svg class="ico-sm"><use href="#i-list"/></svg>Choisir mes bourses</button>
-      <button type="button" class="tab-btn" data-tab="paste" role="tab" aria-selected="false"><svg class="ico-sm"><use href="#i-clipboard"/></svg>Coller ma simulation</button>
+    <div class="tabs" role="tablist" aria-label="Mode de sélection des bourses">
+      <button type="button" class="tab-btn is-active" data-tab="select" id="tab-select" role="tab" aria-selected="true" aria-controls="panel-select" tabindex="0"><svg class="ico-sm"><use href="#i-list"/></svg>Choisir mes bourses</button>
+      <button type="button" class="tab-btn" data-tab="paste" id="tab-paste" role="tab" aria-selected="false" aria-controls="panel-paste" tabindex="-1"><svg class="ico-sm"><use href="#i-clipboard"/></svg>Coller ma simulation</button>
     </div>
 
     <!-- Panneau : coller -->
-    <div class="panel" id="panel-paste" role="tabpanel">
+    <div class="panel" id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" tabindex="0">
       <div class="paste-card">
         <div class="pc-title">Déjà fait une simulation&nbsp;?</div>
         <div class="pc-sub">Collez le lien généré par le simulateur de bourses. Nous pré-remplissons vos choix automatiquement.</div>
@@ -271,7 +275,7 @@ ex : https://esiia.fr/simulateur?parcours=licence&bourses=tres-bien,partenaire-2
     </div>
 
     <!-- Panneau : choisir -->
-    <div class="panel is-active" id="panel-select" role="tabpanel">
+    <div class="panel is-active" id="panel-select" role="tabpanel" aria-labelledby="tab-select" tabindex="0">
       <div id="cats"></div>
     </div>
   </div>
@@ -483,20 +487,60 @@ ex : https://esiia.fr/simulateur?parcours=licence&bourses=tres-bien,partenaire-2
     document.getElementById('modal-ruletext').textContent = o.exclusive
       ? 'Bourse exclusive (groupe ' + o.group + ') : une seule bourse de ce groupe peut être retenue — la sélection remplace la précédente.'
       : 'Bourse cumulable avec les autres, dans la limite du plafond de ' + pct(CAP) + ' sur la scolarité.';
+    // A11Y-1 UX-05c : mémoriser le déclencheur, ouvrir, déplacer le focus DANS la modale.
+    modalPrevFocus = document.activeElement;
     modal.classList.add('show');
+    var cb = document.getElementById('modal-close');
+    if (cb) cb.focus();
   }
-  function closeModal(){ modal.classList.remove('show'); }
+  var modalPrevFocus = null;
+  function closeModal(){
+    modal.classList.remove('show');
+    // A11Y-1 UX-05c : restaurer le focus au déclencheur.
+    if (modalPrevFocus && typeof modalPrevFocus.focus === 'function') modalPrevFocus.focus();
+    modalPrevFocus = null;
+  }
+  var MODAL_FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
   document.getElementById('modal-close').addEventListener('click', closeModal);
   modal.addEventListener('click', function(e){ if(e.target === modal) closeModal(); });
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+  document.addEventListener('keydown', function(e){
+    if (!modal.classList.contains('show')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    // A11Y-1 UX-05c : piège de focus — la tabulation reste dans la modale.
+    if (e.key === 'Tab') {
+      var f = [].slice.call(modal.querySelectorAll(MODAL_FOCUSABLE)).filter(function(n){ return n.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
 
-  /* ---------- Tabs ---------- */
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.tab-btn').forEach(function(b){ var on = b===btn; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
-      var t = btn.dataset.tab;
-      document.getElementById('panel-select').classList.toggle('is-active', t==='select');
-      document.getElementById('panel-paste').classList.toggle('is-active', t==='paste');
+  /* ---------- Tabs (A11Y-1 UX-05a : patron APG — roving tabindex + flèches, activation auto) ---------- */
+  var tabBtns = [].slice.call(document.querySelectorAll('.tab-btn'));
+  function activateTab(btn, moveFocus){
+    tabBtns.forEach(function(b){
+      var on = b === btn;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');    // roving tabindex : seul l'onglet actif est tabulable
+    });
+    var t = btn.dataset.tab;
+    document.getElementById('panel-select').classList.toggle('is-active', t==='select');
+    document.getElementById('panel-paste').classList.toggle('is-active', t==='paste');
+    if (moveFocus) btn.focus();
+  }
+  tabBtns.forEach(function(btn, i){
+    btn.addEventListener('click', function(){ activateTab(btn, false); });
+    btn.addEventListener('keydown', function(e){
+      var idx = null;
+      if (e.key==='ArrowRight' || e.key==='ArrowDown') idx = (i+1) % tabBtns.length;
+      else if (e.key==='ArrowLeft' || e.key==='ArrowUp') idx = (i-1+tabBtns.length) % tabBtns.length;
+      else if (e.key==='Home') idx = 0;
+      else if (e.key==='End') idx = tabBtns.length-1;
+      if (idx === null) return;
+      e.preventDefault();
+      activateTab(tabBtns[idx], true);                 // flèche = déplace + sélectionne + focus (APG auto)
     });
   });
 

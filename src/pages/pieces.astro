@@ -103,11 +103,13 @@ const etape = await getEntry('etapes', 'pieces');
 
   /* Action bar */
   .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
-  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  /* A11Y-1 UX-03 : mobile étroit (≤320px) — la barre se replie, le CTA passe pleine largeur sous
+     « Retour » au lieu de déborder (reflow WCAG 1.4.10). ≥480px : rangée unique (media plus bas). */
+  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; row-gap: var(--space-3); }
   .ab-left { display: flex; align-items: center; gap: var(--space-5); min-width: 0; }
   .ab-gate { font-size: var(--text-sm); color: var(--text-secondary); display: none; align-items: center; gap: var(--space-3); }
   .ab-gate svg { color: var(--violet); flex-shrink: 0; }
-  .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1; }
+  .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1 1 100%; }
   .ab-right .em-btn--lg { flex: 1; }
 
   /* Palette overrides */

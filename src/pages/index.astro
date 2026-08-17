@@ -84,13 +84,20 @@ const etape = await getEntry('etapes', 'formation');
 
   /* ---- Barre d'action collante ---- */
   .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
-  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); }
+  /* A11Y-1 UX-02 : au mobile étroit (≤320px), la barre se replie — le CTA passe pleine largeur
+     sous la puce d'enregistrement au lieu de déborder (reflow WCAG 1.4.10). ≥480px : rangée unique. */
+  .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; row-gap: var(--space-3); }
   .save-chip { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); }
   .save-chip .ok { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--lagoon-deep); font-weight: 600; }
   .save-chip .ok svg { width: 15px; height: 15px; }
   .save-chip .recap { color: var(--text-secondary); display: none; }
   .save-chip .recap strong { color: var(--text-primary); font-weight: 600; }
-  .em-btn--lg { flex: 1; }
+  .em-btn--lg { flex: 1 1 100%; }
+  /* A11Y-1 UX-04 : état désactivé du CTA — jeton (pas d'opacité qui délave le contraste sous 4,5:1).
+     Fond sable + texte encre = contraste élevé, pointeur neutralisé. aria-disabled posé en JS. */
+  /* opacity:1 neutralise le .em-btn[aria-disabled]{opacity:.5} du DS (qui délavait le contraste) :
+     l'état désactivé est signalé par le JETON de fond (sable pâle ≠ or actif), pas par la transparence. */
+  #cta-next.cta-disabled { background: var(--sable); color: var(--text-primary); opacity: 1; box-shadow: none; pointer-events: none; cursor: not-allowed; }
 
   /* ---- Surcharges palette enrichie ---- */
   /* CTA or — énergie */
@@ -523,13 +530,15 @@ const etape = await getEntry('etapes', 'formation');
   function renderCTA(){
     var p = sel.value;
     if (!p || !currentSession) {
+      // A11Y-1 UX-04 : désactivation ACCESSIBLE — aria-disabled + classe jeton (contraste ≥4,5:1),
+      // plus l'opacité 0.55 qui délavait le contraste. href retiré (hors tabulation).
       cta.removeAttribute('href');
-      cta.style.pointerEvents = 'none';
-      cta.style.opacity = '0.55';
+      cta.setAttribute('aria-disabled', 'true');
+      cta.classList.add('cta-disabled');
       return;
     }
-    cta.style.pointerEvents = '';
-    cta.style.opacity = '';
+    cta.removeAttribute('aria-disabled');
+    cta.classList.remove('cta-disabled');
     if (wantBourse) {
       cta.href = AT.buildUrl('/bourses', { parcours: p, session: currentSession, bourse: 'oui' });
       cta.firstChild.textContent = 'Continuer vers les bourses';
