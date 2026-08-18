@@ -17,3 +17,6 @@ dist/
 
 # monorepo = pnpm : pas de lockfile npm
 package-lock.json
+
+# Sortie de CI Lighthouse (régénérable — DS-CLEAN 2.5, dette signalée par PERF-1)
+.lighthouseci/
