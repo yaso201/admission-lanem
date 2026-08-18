@@ -85,10 +85,14 @@ const etape = await getEntry('etapes', 'pieces');
   .up-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
   .up-stat { font-size: var(--text-sm); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .up-stat strong { color: var(--violet); font-weight: 700; }
+  .up-note { display: block; margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); }
 
   /* Drop zone uses .em-file-drop */
   .em-file-drop { padding: var(--space-7) var(--space-7); }
   .em-file-drop:hover { border-color: var(--violet); background: var(--violet-soft); }
+  /* UPLOAD-DND (DEC-B) : survol d'un fichier au-dessus de la zone — un cran plus marqué que :hover
+     (anneau interne), jetons DS uniquement. La zone reste tap-able (mobile inchangé). */
+  .em-file-drop.is-dragover { border-color: var(--violet); background: var(--violet-soft); box-shadow: inset 0 0 0 2px var(--violet); }
   .em-file-drop-icon { color: var(--violet); }
   .em-file-drop-title .lnk { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
 
@@ -321,8 +325,11 @@ const etape = await getEntry('etapes', 'pieces');
     return input;
   }
 
-  /* ---- Upload (validation client puis multipart, le back revalide tout) ---- */
-  function startUpload(code, file) {
+  /* ---- Upload (validation client puis multipart, le back revalide tout) ----
+     `note` (UPLOAD-DND, DEC-D) : signalement optionnel (ex. multi-fichiers déposés), rendu en
+     aria-live pendant l'envoi. Le glisser-déposer entre par ICI → mêmes contrôles, même progression,
+     même reprise que le sélecteur (aucun second chemin). */
+  function startUpload(code, file, note) {
     var ext = (file.name.indexOf('.') > -1 ? file.name.split('.').pop() : '').toLowerCase();
     if (['pdf', 'jpg', 'jpeg', 'png'].indexOf(ext) === -1) {
       live[code] = { state: 'error', message: 'Format non accepté — envoyez un PDF, JPG ou PNG.' };
@@ -332,7 +339,7 @@ const etape = await getEntry('etapes', 'pieces');
       live[code] = { state: 'error', message: 'Fichier trop volumineux (maximum 5 Mo).' };
       render(); return;
     }
-    live[code] = { state: 'progress', pct: 0, fileName: file.name };
+    live[code] = { state: 'progress', pct: 0, fileName: file.name, note: note || null };
     render();
     AT.api.uploadPieceFile(code, file, function (res) {
       if (res.ok) {
@@ -406,6 +413,25 @@ const etape = await getEntry('etapes', 'pieces');
     title.appendChild(h('span', 'lnk', 'parcourez vos fichiers'));
     drop.appendChild(title);
     drop.appendChild(h('span', 'em-file-drop-hint', subByCode[p.code] || 'PDF, JPG ou PNG — 5 Mo max.'));
+    // UPLOAD-DND (DEC-A/B/D) : glisser-déposer ADDITIF. Le sélecteur (fileInput) et le lien
+    // « parcourez » restent. dragover autorise le drop + marque la zone ; drop capte le fichier et le
+    // fait entrer par startUpload (mêmes contrôles). Multi-fichiers → le premier, avec signalement.
+    drop.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      if (e.dataTransfer) { e.dataTransfer.dropEffect = 'copy'; }
+      drop.classList.add('is-dragover');
+    });
+    drop.addEventListener('dragleave', function (e) {
+      if (!drop.contains(e.relatedTarget)) { drop.classList.remove('is-dragover'); }
+    });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      drop.classList.remove('is-dragover');
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) { return; }
+      var note = files.length > 1 ? 'Plusieurs fichiers déposés — seul le premier a été pris.' : null;
+      startUpload(p.code, files[0], note);
+    });
     return drop;
   }
   function bodyFor(p, state) {
@@ -484,6 +510,8 @@ const etape = await getEntry('etapes', 'pieces');
       stat.appendChild(h('strong', null, 'Envoi en cours'));
       stat.appendChild(document.createTextNode(' · ' + (state.fileName || '')));
       rowUp.appendChild(stat); up.appendChild(rowUp);
+      // UPLOAD-DND (DEC-D) : signalement multi-fichiers, dans le bloc aria-live → annoncé aux lecteurs d'écran.
+      if (state.note) { up.appendChild(h('span', 'up-note', state.note)); }
       body.appendChild(up);
     } else if (state.state === 'error') {
       var err = h('div', 'uperror');
@@ -716,6 +744,16 @@ const etape = await getEntry('etapes', 'pieces');
     box.appendChild(eb);
     listEl.appendChild(box);
   }
+
+  /* UPLOAD-DND (DEC-G) : un fichier lâché HORS d'une zone ne doit pas être ouvert par le navigateur
+     à la place de la page (piège classique). Neutralisé au niveau du document, SAUF à l'intérieur
+     d'une .em-file-drop qui gère son propre drop. Événements pointeur seuls → nul effet au toucher. */
+  ['dragover', 'drop'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (e.target && e.target.closest && e.target.closest('.em-file-drop')) { return; }
+      e.preventDefault();
+    });
+  });
 
   /* ---- Chargement initial : la liste des pièces vient du DOSSIER (back) ---- */
   if (!AT.getDossierId() || !AT.getDossierToken()) {
