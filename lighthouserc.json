@@ -13,6 +13,7 @@
         "http://localhost:4322/paiement-accepte/",
         "http://localhost:4322/paiement-echoue/",
         "http://localhost:4322/paiement-sop/",
+        "http://localhost:4322/accessibilite/",
         "http://localhost:4322/legal/cgv/",
         "http://localhost:4322/legal/politique-de-confidentialite/",
         "http://localhost:4322/legal/politique-de-remboursement/",
@@ -21,14 +22,28 @@
       "numberOfRuns": 1,
       "settings": {
         "chromeFlags": "--no-sandbox --headless --disable-gpu",
-        "onlyCategories": ["accessibility", "best-practices", "seo"]
+        "onlyCategories": ["accessibility", "best-practices", "seo", "performance"],
+        "throttlingMethod": "simulate",
+        "throttling": {
+          "rttMs": 400,
+          "throughputKbps": 400,
+          "requestLatencyMs": 400,
+          "downloadThroughputKbps": 400,
+          "uploadThroughputKbps": 400,
+          "cpuSlowdownMultiplier": 4
+        },
+        "formFactor": "mobile",
+        "screenEmulation": { "mobile": true, "width": 360, "height": 640, "deviceScaleFactor": 2 }
       }
     },
     "assert": {
       "assertions": {
         "categories:accessibility": ["error", { "minScore": 0.9 }],
         "categories:best-practices": ["warn", { "minScore": 0.9 }],
-        "categories:seo": ["warn", { "minScore": 0.9 }]
+        "categories:seo": ["warn", { "minScore": 0.9 }],
+        "categories:performance": ["warn", { "minScore": 0.3 }],
+        "resource-summary:total:size": ["warn", { "maxNumericValue": 1300000 }],
+        "resource-summary:script:size": ["warn", { "maxNumericValue": 30000 }]
       }
     },
     "upload": {
