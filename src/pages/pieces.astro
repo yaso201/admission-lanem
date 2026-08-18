@@ -50,7 +50,7 @@ const etape = await getEntry('etapes', 'pieces');
   .doc-item.is-error { border-color: var(--error-100); }
   /* Lot 3c-3b : pièce rejetée priorisée (bord + fond légers — le bandeau motif porte le détail) */
   .doc-item.is-rejected { border-color: var(--error-500); }
-  /* Lot 3c-3b : bloc « j'ai re-déposé » (modèle A, SOU) */
+  /* Lot 3c-3b : bloc « j'ai redéposé » (modèle A, SOU) */
   .resubmit-box { border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-paper); padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
   .resubmit-title { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); display: block; }
   .resubmit-text { font-size: var(--text-xs); color: var(--text-secondary); display: block; margin-top: 2px; }
@@ -235,11 +235,11 @@ const etape = await getEntry('etapes', 'pieces');
          rejetée/manquante) mais le back garantit (409). -->
     <div class="resubmit-box" id="resubmit-box" hidden>
       <span>
-        <span class="resubmit-title">Vous avez re-déposé vos pièces&nbsp;?</span>
-        <span class="resubmit-text">Signalez la fin de votre re-dépôt&nbsp;: votre dossier sera re-contrôlé par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).</span>
+        <span class="resubmit-title">Vous avez redéposé vos pièces&nbsp;?</span>
+        <span class="resubmit-text">Signalez la fin de votre redépôt&nbsp;: votre dossier sera contrôlé à nouveau par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).</span>
       </span>
       <div>
-        <button type="button" class="em-btn em-btn--primary" id="resubmit-btn">J'ai re-déposé toutes mes pièces</button>
+        <button type="button" class="em-btn em-btn--primary" id="resubmit-btn">J'ai redéposé toutes mes pièces</button>
       </div>
       <span class="resubmit-gate" id="resubmit-gate"></span>
       <div class="resubmit-msg" id="resubmit-msg" role="status" aria-live="polite" hidden></div>
@@ -337,8 +337,8 @@ const etape = await getEntry('etapes', 'pieces');
     AT.api.uploadPieceFile(code, file, function (res) {
       if (res.ok) {
         delete live[code];
-        // Lot 3c-3b : refléter AUSSI l'état réel — le tri, le badge et le bouton « j'ai re-déposé »
-        // se recalculent au render() (une rejetée re-déposée repasse « En vérification »).
+        // Lot 3c-3b : refléter AUSSI l'état réel — le tri, le badge et le bouton « j'ai redéposé »
+        // se recalculent au render() (une rejetée redéposée repasse « En vérification »).
         pieces.forEach(function (p) {
           if (p.code === code) {
             p.statut = 'deposee'; p.statut_reel = 'uploaded';
@@ -434,7 +434,7 @@ const etape = await getEntry('etapes', 'pieces');
       return body;
     }
     if (state.state === 'rejected') {
-      // Lot 3c-3b : REJETÉE = motif (le candidat sait POURQUOI) + zone de re-dépôt.
+      // Lot 3c-3b : REJETÉE = motif (le candidat sait POURQUOI) + zone de redépôt.
       var motif = p.reject_reason || '';
       if (p.reject_comment) { motif += (motif ? ' — ' : '') + p.reject_comment; }
       var rj = h('div', 'uperror');
@@ -618,7 +618,7 @@ const etape = await getEntry('etapes', 'pieces');
     renderResubmit();
   }
 
-  /* Lot 3c-3b : bloc « j'ai re-déposé » — SOU uniquement. Le front GUIDE (désactivé avec
+  /* Lot 3c-3b : bloc « j'ai redéposé » — SOU uniquement. Le front GUIDE (désactivé avec
      compteur tant qu'une pièce est rejetée) ; le back GARANTIT (409 PIECES_REJECTED_PENDING). */
   function renderResubmit() {
     var box = document.getElementById('resubmit-box');
@@ -636,7 +636,7 @@ const etape = await getEntry('etapes', 'pieces');
     box.style.display = '';
     var btn = document.getElementById('resubmit-btn');
     var gate = document.getElementById('resubmit-gate');
-    /* Copie selon le geste : INC = re-soumettre (repart en étude) ; SOU = signaler le re-dépôt. */
+    /* Copie selon le geste : INC = re-soumettre (repart en étude) ; SOU = signaler le redépôt. */
     var title = box.querySelector('.resubmit-title');
     var text = box.querySelector('.resubmit-text');
     if (dossierStatut === 'INC') {
@@ -644,9 +644,9 @@ const etape = await getEntry('etapes', 'pieces');
       if (title) { title.textContent = 'Vous avez complété votre dossier ?'; }
       if (text) { text.textContent = 'Re-soumettez votre dossier : il repartira en étude — sans frais supplémentaires (aucun nouveau paiement).'; }
     } else {
-      btn.textContent = 'J’ai re-déposé toutes mes pièces';
-      if (title) { title.textContent = 'Vous avez re-déposé vos pièces ?'; }
-      if (text) { text.textContent = 'Signalez la fin de votre re-dépôt : votre dossier sera re-contrôlé par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).'; }
+      btn.textContent = 'J’ai redéposé toutes mes pièces';
+      if (title) { title.textContent = 'Vous avez redéposé vos pièces ?'; }
+      if (text) { text.textContent = 'Signalez la fin de votre redépôt : votre dossier sera contrôlé à nouveau par le service des admissions — sans frais supplémentaires (aucun nouveau paiement).'; }
     }
     if (resubmitDone) {
       btn.setAttribute('disabled', ''); btn.setAttribute('aria-disabled', 'true');
@@ -689,7 +689,7 @@ const etape = await getEntry('etapes', 'pieces');
     AT.api.candidateResubmit(function (res) {
       if (res.ok) {
         resubmitDone = true;
-        msg.textContent = 'Merci — votre dossier sera re-contrôlé par le service des admissions, sans frais supplémentaires.';
+        msg.textContent = 'Merci — votre dossier sera contrôlé à nouveau par le service des admissions, sans frais supplémentaires.';
         renderResubmit();
       } else if (res.error && res.error.code === 'OTP_RESENT') {
         AT.navigateTo('/reprise');

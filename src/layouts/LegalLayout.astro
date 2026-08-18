@@ -138,7 +138,10 @@ const { title, dateEffet, version } = Astro.props;
   .prose-legal blockquote { margin: var(--space-6) 0; padding: var(--space-4) var(--space-6); border-left: 3px solid var(--violet); background: var(--violet-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--text-primary); }
   .prose-legal blockquote p:last-child { margin-bottom: 0; }
 
-  .prose-legal table { width: 100%; border-collapse: collapse; margin: 0 0 var(--space-6); font-size: var(--text-sm); }
+  /* DS-CLEAN 2.1 (NC-1, WCAG 1.4.10) : les tables du Markdown légal (sous-traitants, durées de
+     conservation) débordaient horizontalement sous ~380 px. Le Markdown rend un <table> nu, non
+     enveloppable ; on rend la table elle-même défilable (display:block + overflow-x). */
+  .prose-legal table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; width: 100%; border-collapse: collapse; margin: 0 0 var(--space-6); font-size: var(--text-sm); }
   .prose-legal th, .prose-legal td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-subtle); }
   .prose-legal th { font-weight: 600; color: var(--text-primary); background: var(--sand-50); }
 

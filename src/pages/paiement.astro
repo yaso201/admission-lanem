@@ -60,6 +60,8 @@ const etape = await getEntry('etapes', 'paiement');
   /* Action bar */
   .action-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); background: var(--surface-paper); border-top: 1px solid var(--border-default); box-shadow: 0 -8px 24px -16px rgba(15,14,10,0.18); }
   .action-bar-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  /* DS-CLEAN 2.4 : message d'échec de paiement (remplace alert()). Jetons d'erreur du DS. */
+  .pay-msg { max-width: 1120px; margin: var(--space-3) auto 0; padding: var(--space-3) var(--space-5); background: var(--error-50); color: var(--error-700); border: 1px solid var(--error-100); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 500; }
   .ab-secure { font-size: var(--text-xs); color: var(--text-tertiary); display: none; align-items: center; gap: var(--space-3); }
   .ab-secure svg { color: var(--lagoon-deep); flex-shrink: 0; }
   .ab-right { display: flex; align-items: center; gap: var(--space-4); flex: 1; }
@@ -281,6 +283,10 @@ const etape = await getEntry('etapes', 'paiement');
 </main>
 
 <div class="action-bar">
+  <!-- DS-CLEAN 2.4 (UX-07) : message d'échec de paiement dans le contexte de la page (remplace les
+       alert() natifs — rupture de contexte + restitution variable en lecteur d'écran). role=alert +
+       aria-live pour l'annonce. Aucun changement de logique : mêmes déclencheurs. -->
+  <div class="pay-msg" id="pay-msg" role="alert" aria-live="assertive" hidden></div>
   <div class="action-bar-inner">
     <span class="ab-secure" id="ab-secure"><svg class="ico-sm"><use href="#i-lock"/></svg>Connexion chiffrée · confirmation immédiate par FedaPay</span>
     <div class="ab-right">
@@ -403,10 +409,19 @@ const etape = await getEntry('etapes', 'paiement');
     return current === 'online' ? !!(onlineCb && onlineCb.checked) : !!(sopCb && sopCb.checked);
   }
 
+  /* DS-CLEAN 2.4 : affiche l'échec dans la page (région #pay-msg, role=alert) au lieu d'un alert()
+     natif. Messages SEULS — mêmes déclencheurs, même flux. */
+  function showPayError(msg) {
+    var el = document.getElementById('pay-msg');
+    if (!el) { return; }
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
   function payDone(res, target) {
     if (res.ok) { AT.navigateTo(target); }
     else {
-      alert((res.error && res.error.message) || 'Le paiement a échoué.');
+      showPayError((res.error && res.error.message) || 'Le paiement a échoué.');
       syncCta();
     }
   }
@@ -431,12 +446,12 @@ const etape = await getEntry('etapes', 'paiement');
       success: function () { paid = true; cta.innerHTML = ctaHTML('Confirmation en cours…'); },
       failed: function () {
         settled = true;
-        alert('Le paiement a été refusé ou annulé. Aucun montant n\'a été débité.');
+        showPayError('Le paiement a été refusé ou annulé. Aucun montant n\'a été débité.');
         syncCta();
       },
       unavailable: function () {
         settled = true;
-        alert('Le service de paiement est momentanément indisponible. Réessayez ou choisissez le canal virement.');
+        showPayError('Le service de paiement est momentanément indisponible. Réessayez ou choisissez le canal virement.');
         syncCta();
       }
     });
