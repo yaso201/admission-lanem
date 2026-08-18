@@ -38,6 +38,9 @@ export const ecole = {
     { slug: 'politique-de-remboursement', label: 'Politique de remboursement et droit de rétractation' },
     { slug: 'consentement-transfert-donnees', label: 'Transferts de données vers des États tiers' },
   ],
+  /** GOUV-1 : déclaration d'accessibilité (page dédiée, hors collection `legal`). Lien posé
+   *  au pied de page aux côtés des informations légales. */
+  a11yLink: { href: '/accessibilite', label: 'Accessibilité' },
 } as const;
 
 export type Ecole = typeof ecole;

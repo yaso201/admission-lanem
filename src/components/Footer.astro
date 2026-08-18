@@ -13,7 +13,7 @@
  */
 import { ecole } from '../config/ecole';
 import pkg from '../../package.json';
-const { identity, contact, legalLinks } = ecole;
+const { identity, contact, legalLinks, a11yLink } = ecole;
 const year = new Date().getFullYear();
 const appVersion = pkg.version;
 ---
@@ -65,6 +65,9 @@ const appVersion = pkg.version;
               <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path></svg>{l.label}
             </a>
           ))}
+          <a class="ftr-link ftr-legal-link" href={a11yLink.href}>
+            <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path></svg>{a11yLink.label}
+          </a>
         </nav>
       </div>
 

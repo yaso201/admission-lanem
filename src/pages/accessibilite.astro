@@ -1,0 +1,105 @@
+---
+/**
+ * /accessibilite — Déclaration d'accessibilité (GOUV-1)
+ * -----------------------------------------------------
+ * Page dédiée (hors collection `legal` dérivée du back). Fonde son contenu sur l'audit par
+ * échantillon du parcours candidat (docs/GOUV-1-PREUVES.md). DEC-A : conformité partielle,
+ * AUCUN taux — aucun audit RGAA complet n'a été réalisé. Ce qui n'a pas été testé est rendu
+ * aussi visible que ce qui l'a été. Contenu volontairement SANS tableau large (reflow 320 px).
+ */
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { ecole } from '../config/ecole';
+const { contact } = ecole;
+---
+
+<LegalLayout title="Déclaration d'accessibilité">
+  <p>
+    <strong>La Nouvelle École des Métiers (LaNEM)</strong> s'engage à rendre son service de
+    candidature en ligne accessible au plus grand nombre, y compris aux personnes en situation
+    de handicap. Cette déclaration a été établie le <strong>18 août 2026</strong> (version 1.0) et
+    porte sur le site de candidature <strong>admissions.lanem.bj</strong>.
+  </p>
+
+  <h2>Un engagement volontaire</h2>
+  <p>
+    Le Bénin ne dispose pas, à ce jour, d'une norme d'accessibilité numérique opposable. LaNEM
+    <strong>s'engage volontairement</strong> à rendre ses services conformes au référentiel
+    international <strong>WCAG 2.1 niveau AA</strong>. Il s'agit d'une démarche d'amélioration, et
+    non d'une conformité réglementaire imposée.
+  </p>
+
+  <h2>État de conformité</h2>
+  <p>
+    Le service de candidature en ligne est en <strong>conformité partielle</strong> avec WCAG 2.1
+    AA. <strong>Aucun taux de conformité n'est publié</strong> : à ce jour, aucun audit complet
+    (portant sur l'ensemble des critères, avec des tests par un utilisateur de technologie
+    d'assistance) n'a été réalisé. Publier un pourcentage sans un tel audit serait trompeur. Le
+    jour où un audit complet sera mené, le taux sera indiqué ici.
+  </p>
+
+  <h2>Périmètre audité</h2>
+  <p>Un audit <strong>par échantillon</strong> a été mené le 18 août 2026 sur :</p>
+  <ul>
+    <li>l'ensemble du <strong>parcours de candidature public</strong> : accueil, identité, pièces
+      justificatives, bourses, paiement, confirmation, reprise de dossier et suivi ;</li>
+    <li>les pages d'<strong>informations légales</strong>.</li>
+  </ul>
+
+  <h2>Ce qui n'a pas été audité</h2>
+  <p>
+    Par souci de transparence, voici ce que cet audit <strong>ne couvre pas</strong>. Ces points
+    sont aussi importants que les précédents :
+  </p>
+  <ul>
+    <li><strong>La restitution par un lecteur d'écran réel</strong> (VoiceOver, NVDA…) par un
+      utilisateur : l'audit a inspecté l'<em>arbre d'accessibilité</em> — la donnée que lit un
+      lecteur d'écran (nom et rôle de chaque élément) — mais n'a pas substitué un test humain.</li>
+    <li><strong>Les écrans après authentification</strong> (saisie du code à usage unique, contenus
+      chargés dynamiquement) : la mesure a été faite « à vide », sans session active. Ces états
+      restent à vérifier.</li>
+    <li><strong>L'espace de gestion interne</strong> (back-office du personnel) : périmètre distinct,
+      non ouvert au public, <strong>non audité à ce jour</strong>.</li>
+    <li>Un <strong>audit complet</strong> couvrant l'intégralité des critères WCAG / RGAA.</li>
+  </ul>
+
+  <h2>Technologies et outils</h2>
+  <p>Le service s'appuie sur HTML, CSS et JavaScript. L'audit a utilisé :</p>
+  <ul>
+    <li><strong>axe-core 4.13</strong> (règles WCAG 2.0/2.1/2.2 niveaux A et AA), sur navigateur Chromium ;</li>
+    <li>l'<strong>arbre d'accessibilité</strong> du navigateur, pour vérifier le nom accessible et le
+      rôle de chaque élément interactif ;</li>
+    <li>des vérifications de <strong>recomposition à 320 px de large</strong> (critère 1.4.10) et
+      d'<strong>agrandissement du texte à 200 %</strong> (critère 1.4.4).</li>
+  </ul>
+  <p>Ces outils automatisés ne remplacent pas un test mené par une personne utilisant réellement une technologie d'assistance.</p>
+
+  <h2>Résultats et non-conformités connues</h2>
+  <p>Sur le périmètre audité, aucune violation automatique n'a été relevée et tous les éléments
+    interactifs portent un nom accessible. Les non-conformités suivantes restent connues :</p>
+  <ul>
+    <li><strong>Pages d'informations légales — tableaux à défilement horizontal.</strong> Certains
+      tableaux (liste des sous-traitants, durées de conservation) débordent horizontalement sur les
+      très petits écrans (largeur inférieure à environ 380 px), ce qui contrevient au critère
+      1.4.10 (recomposition). <em>Correction prévue</em> : encadrer ces tableaux dans un conteneur
+      défilable, lors de la prochaine itération d'accessibilité.</li>
+    <li>Les points listés dans « <strong>Ce qui n'a pas été audité</strong> » constituent des
+      réserves de périmètre : leur conformité n'est pas garantie tant qu'ils n'ont pas été vérifiés.</li>
+  </ul>
+
+  <h2>Retour d'information et contact</h2>
+  <p>
+    Si vous rencontrez un défaut d'accessibilité qui vous empêche d'accéder à un contenu ou à une
+    fonctionnalité, écrivez-nous à <a href={`mailto:${contact.email}`}>{contact.email}</a>. Nous nous
+    engageons à vous répondre et à rechercher une solution ou une alternative dans un délai
+    raisonnable.
+  </p>
+
+  <h2>Voies de recours</h2>
+  <p>
+    Le Bénin ne dispose pas d'autorité dédiée à l'accessibilité numérique. Pour toute question
+    relative au <strong>traitement de vos données personnelles</strong>, vous pouvez saisir
+    l'<strong>Autorité de Protection des Données Personnelles (APDP)</strong>, instituée par la loi
+    n° 2017-20 du 20 avril 2018 portant code du numérique en République du Bénin. Pour un problème
+    d'accessibilité, le contact ci-dessus constitue votre premier recours.
+  </p>
+</LegalLayout>

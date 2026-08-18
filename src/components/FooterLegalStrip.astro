@@ -13,7 +13,7 @@
  */
 import { ecole } from '../config/ecole';
 import pkg from '../../package.json';
-const { identity, legalLinks } = ecole;
+const { identity, legalLinks, a11yLink } = ecole;
 const year = new Date().getFullYear();
 const appVersion = pkg.version;
 ---
@@ -28,6 +28,8 @@ const appVersion = pkg.version;
           <a href={`/legal/${l.slug}`}>{l.label}</a>
         </Fragment>
       ))}
+      <span class="fls-sep" aria-hidden="true">·</span>
+      <a href={a11yLink.href}>{a11yLink.label}</a>
     </nav>
   </div>
 </footer>
