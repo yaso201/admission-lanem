@@ -186,6 +186,53 @@
     return prefix + '-' + id;
   }
 
+  /* ---------- PAY-IDEM (faille 16) : clé d'idempotence STABLE PAR INTENTION ----------
+     Faille : les 3 chemins de paiement régénéraient leur clé à chaque tentative → deux clics
+     après un timeout créaient DEUX transactions FedaPay pour une même intention (une orpheline).
+     Correctif CLIENT (le serveur déduplique déjà) : l'identité d'une intention est le tuple
+       dossier_id : feeType : channel : amount
+     La clé est générée UNE fois par identité, MÉMORISÉE en localStorage (namespace DÉDIÉ, DISTINCT
+     de l'ancrage de reprise `resume` — aucun débordement), REJOUÉE à l'identique sur un réessai ou
+     un rechargement, et RENOUVELÉE dès que l'identité change (canal Q4, montant Q5, dossier).
+     Fenêtre bornée = RESUME_WINDOW_MS (on MIRE la constante de reprise, pas de 2e durée). Purge sur
+     confirmation (résultat opposable, cf. pollDossierStatus) ; l'expiration couvre l'abandon, que le
+     client ne peut pas détecter de façon fiable. */
+  var LS_PAYINTENT = 'emela.admission.payintent';
+
+  function _payIntentIdentity(feeType, channel, amount) {
+    return [getDossierId(), feeType, channel, amount || 0].join(':');
+  }
+  function _readPayIntents() {
+    try { return JSON.parse(localStorage.getItem(LS_PAYINTENT) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function _writePayIntents(store) {
+    try { localStorage.setItem(LS_PAYINTENT, JSON.stringify(store)); } catch (e) {}
+  }
+  /** Clé stable d'une intention : générée+mémorisée une fois, rejouée tant qu'elle vit. */
+  function _payIntentKey(feeType, channel, amount) {
+    var now = Date.now();
+    var identity = _payIntentIdentity(feeType, channel, amount);
+    var store = _readPayIntents();
+    var pruned = {};                                    // hygiène : ne garder que le vivant
+    for (var k in store) { if (store[k] && store[k].exp > now) { pruned[k] = store[k]; } }
+    store = pruned;
+    var entry = store[identity];
+    if (!entry || !entry.key || entry.exp <= now) {     // fenêtre FIXE depuis la génération
+      entry = { key: _idemKey('pay'), exp: now + RESUME_WINDOW_MS };
+      store[identity] = entry;
+    }
+    _writePayIntents(store);
+    return entry.key;
+  }
+  /** Purge les intentions d'un dossier — à la confirmation (résultat opposable). */
+  function _clearPayIntents(dossierId) {
+    if (!dossierId) { return; }
+    var store = _readPayIntents();
+    var next = {};
+    for (var k in store) { if (k.indexOf(dossierId + ':') !== 0) { next[k] = store[k]; } }
+    _writePayIntents(next);
+  }
+
   /* LOT F (F1) : payload COMPLET — identité réelle, niveau, consentements, bourses.
      Le back refuse sans level_code ni consents (CONSENT_REQUIRED/LEVEL_REQUIRED). */
   function realCreateDossier(payload, cb) {
@@ -380,7 +427,7 @@
       acompte_xof: opts.acompte || 0,
       consent_refund: opts.consentRefund ? 1 : 0,
       consent_data_transfer: opts.consentTransfer ? 1 : 0,
-      idempotency_key: _idemKey('enroll')
+      idempotency_key: _payIntentKey('enrollment', channel, opts.acompte || 0)
     };
     if (channel === 'online') {
       _post('public.submit_enrollment_payment_online', base, cb);
@@ -448,13 +495,13 @@
         dossier_id: id, token: tok,
         mode: 'Bank',
         consent_refund: opts.consentRefund ? 1 : 0,
-        idempotency_key: 'pay-' + Date.now()
+        idempotency_key: _payIntentKey('application', 'bank', 0)
       }, cb);
     } else if (mode === 'success') {
       _post('public.submit_payment_online', {
         dossier_id: id, token: tok,
         consent_refund: opts.consentRefund ? 1 : 0,
-        idempotency_key: 'pay-' + Date.now()
+        idempotency_key: _payIntentKey('application', 'online', 0)
       }, cb);
     } else {
       cb({ ok: false, data: null, error: { code: 'PAYMENT_FAILED', message: 'Transaction refusée.' } });
@@ -639,7 +686,10 @@
          lire `status` (anglais) donnait undefined → SOU/INS jamais détecté, confirmation
          de paiement jamais affichée. */
       var st = res.ok && res.data && res.data.statut;
-      if (st && expect.indexOf(st) !== -1) { cb(true); return; }
+      if (st && expect.indexOf(st) !== -1) {
+        _clearPayIntents(getDossierId());   // PAY-IDEM : confirmation = résultat opposable → purge
+        cb(true); return;
+      }
       if (tries <= 0) { cb(false); return; }
       setTimeout(function () { pollDossierStatus(expect, cb, tries - 1); }, 3000);
     });
