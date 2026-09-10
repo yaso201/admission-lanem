@@ -12,6 +12,26 @@ const etape = await getEntry('etapes', 'formation');
   .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
   .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
 
+  /* ---- PROMO-LOCALE (DEC-343) : bandeau campagne, 3 colonnes barré→promo ---- */
+  .promo-band { background: var(--violet); color: #fff; }
+  .promo-band-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: grid; grid-template-columns: auto 1fr; gap: var(--space-6); align-items: center; }
+  .pb-head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .pb-eyebrow { font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+  .pb-until { font-size: var(--text-xs); color: rgba(255,255,255,0.72); white-space: nowrap; }
+  .pb-until .pb-chip { display: inline-block; margin-left: var(--space-2); padding: 1px 8px; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); font-family: var(--font-mono); font-size: var(--text-2xs); }
+  .pb-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+  .pb-col { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .pb-fam { font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.70); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pb-old { font-size: var(--text-xs); color: rgba(255,255,255,0.55); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+  .pb-new { font-family: var(--font-display); font-size: var(--text-md); font-weight: 700; color: var(--gold); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pb-new .pb-unit { font-size: var(--text-2xs); font-weight: 600; color: rgba(255,255,255,0.72); margin-left: 3px; }
+  @media (max-width: 720px) {
+    .promo-band-inner { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-3) var(--space-5); }
+    .pb-head { flex-direction: row; align-items: baseline; gap: var(--space-3); }
+    .pb-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+    .pb-new { font-size: var(--text-sm); }
+  }
+
   /* ---- Progression minimaliste (de B) ---- */
   .progress-strip { background: var(--surface-paper); border-bottom: 1px solid var(--border-subtle); }
   .progress-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-6); }
@@ -180,6 +200,18 @@ const etape = await getEntry('etapes', 'formation');
   <symbol id="i-wallet" viewBox="0 0 256 256"><path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm-36,84a12,12,0,1,1,12-12A12,12,0,0,1,180,148Z"/></symbol>
 </svg>
 
+<!-- PROMO-LOCALE (DEC-343) : bandeau campagne — rendu UNIQUEMENT si campagne active
+     (données 100% API, aucun montant en dur — LOT-A3). Rendu textContent, jamais innerHTML. -->
+<div class="promo-band" id="promo-band" hidden aria-label="Promotion en cours">
+  <div class="promo-band-inner">
+    <div class="pb-head">
+      <span class="pb-eyebrow" id="pb-eyebrow">Promo rentrée</span>
+      <span class="pb-until" id="pb-until"></span>
+    </div>
+    <div class="pb-cols" id="pb-cols"></div>
+  </div>
+</div>
+
 <div class="progress-strip">
   <div class="progress-inner">
     <span class="progress-label"><span class="num">1</span> / <span id="step-total">4</span> — Formation</span>
@@ -296,7 +328,7 @@ const etape = await getEntry('etapes', 'formation');
   </div>
 </div>
 
-<script is:inline src="/scripts/admission-tunnel.js?v=8"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=10"></script>
 <script is:inline src="/scripts/programme-options.js"></script>
 <script is:inline>
 /* LOT F (F8) — programmes et sessions RÉELS (list_programmes / list_sessions) :
@@ -605,6 +637,42 @@ const etape = await getEntry('etapes', 'formation');
     loadSessions();
   });
   syncRecap();
+
+  /* ---- PROMO-LOCALE (DEC-343) : bandeau campagne 3 colonnes (barré → promo) ---- */
+  var FAMILLE_LIBELLES = { 'Licence': 'Licences', 'Bachelor': 'Bachelors ESIIA',
+                           'Double-Diplomation': 'Double Diplôme' };
+  AT.api.getActivePromotion(function (res) {
+    var d = res.ok && res.data;
+    if (!d || !d.active || !d.familles || !d.familles.length) { return; }
+    var cols = document.getElementById('pb-cols');
+    d.familles.slice(0, 3).forEach(function (f) {
+      var col = document.createElement('div'); col.className = 'pb-col';
+      var fam = document.createElement('span'); fam.className = 'pb-fam';
+      fam.textContent = FAMILLE_LIBELLES[f.parcours] || f.parcours;
+      var old = document.createElement('span'); old.className = 'pb-old';
+      old.textContent = AT.fmtXOF(f.plein_xof) + ' F';
+      var neu = document.createElement('span'); neu.className = 'pb-new';
+      neu.textContent = AT.fmtXOF(f.promo_xof) + ' F';
+      var unit = document.createElement('span'); unit.className = 'pb-unit';
+      unit.textContent = '/an';
+      neu.appendChild(unit);
+      col.appendChild(fam); col.appendChild(old); col.appendChild(neu);
+      cols.appendChild(col);
+    });
+    var until = document.getElementById('pb-until');
+    var end = d.end_date;
+    until.textContent = "jusqu'au " + end + ' inclus';
+    // Compte a rebours J-N (calcul client, borne incluse : fin = end_date 23:59:59).
+    var endTs = Date.parse(end + 'T23:59:59');
+    if (!isNaN(endTs)) {
+      var days = Math.max(0, Math.ceil((endTs - Date.now()) / 86400000));
+      var chip = document.createElement('span'); chip.className = 'pb-chip';
+      chip.textContent = 'J-' + days;
+      until.appendChild(chip);
+    }
+    if (d.label) { document.getElementById('pb-eyebrow').textContent = d.label; }
+    document.getElementById('promo-band').hidden = false;
+  });
 })();
 </script>
 

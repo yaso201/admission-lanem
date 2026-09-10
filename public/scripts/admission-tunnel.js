@@ -528,6 +528,11 @@
     _get('public.get_legal_documents', types ? { types: types } : {}, cb);
   }
 
+  /** PROMO-LOCALE (DEC-343) : résumé de la campagne active pour le bandeau d'accueil. */
+  function getActivePromotion(cb) {
+    _get('local_promo.get_active_local_promotion', {}, cb);
+  }
+
   /** PROMO-LOCALE (DEC-344) : validation publique d'un code promo — réponse générique. */
   function validatePromoCode(params, cb) {
     _get('local_promo.validate_promo_code', params || {}, cb);
@@ -781,6 +786,7 @@
       processPayment: processPayment,
       getFrais: getFrais,
       getLegalDocuments: getLegalDocuments,
+      getActivePromotion: getActivePromotion,
       validatePromoCode: validatePromoCode,
       setPromoCode: setPromoCode,
       listSessions: listSessions,
