@@ -12,8 +12,11 @@ const etape = await getEntry('etapes', 'formation');
   .ico-sm { width: 15px; height: 15px; flex-shrink: 0; }
   .ico-lg { width: 22px; height: 22px; flex-shrink: 0; }
 
-  /* ---- PROMO-LOCALE (DEC-343) : bandeau campagne, 3 colonnes barré→promo ---- */
-  .promo-band { background: var(--violet); color: #fff; }
+  /* ---- PROMO-LOCALE (DEC-343) : bandeau campagne, 3 colonnes barré→promo ----
+     Épinglé au défilement (sticky) en desktop — reste visible comme le hero ;
+     statique en mobile (≤720px) pour ne pas manger le petit écran pendant la saisie. */
+  .promo-band { background: var(--violet); color: #fff; position: sticky; top: 0; z-index: var(--z-sticky); box-shadow: 0 6px 18px -12px rgba(15,14,10,0.45); }
+  @media (max-width: 720px) { .promo-band { position: static; box-shadow: none; } }
   .promo-band-inner { max-width: 1120px; margin: 0 auto; padding: var(--space-4) var(--space-5); display: grid; grid-template-columns: auto 1fr; gap: var(--space-6); align-items: center; }
   .pb-head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .pb-eyebrow { font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
