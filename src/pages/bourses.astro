@@ -307,7 +307,7 @@ ex : https://esiia.fr/simulateur?parcours=licence&bourses=tres-bien,partenaire-2
   </div>
 </div>
 
-<script is:inline src="/scripts/admission-tunnel.js?v=8"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=9"></script>
 <script is:inline>
 /* LOT-A3 (ADM-DEBT-48) — catalogue de bourses, taux, scolarité, plafond, promotions et
    disclaimer chargés depuis le BACK (get_frais : miroirs UF répliqués). Plus AUCUN taux ni
@@ -342,6 +342,20 @@ ex : https://esiia.fr/simulateur?parcours=licence&bourses=tres-bien,partenaire-2
       if (D.frais2) FIXES.push({ label: "Frais d'inscription", v: D.frais2.montant_xof });
       PROMOS = D.promotions_actives || [];
       CATS = D.bourses_eligibles || [];
+      if (D.promotion_locale) {
+        // DEC-343 : info non-calculante (l'articulation bourses x promo locale est differee, DEC-345).
+        // Construction DOM + textContent (jamais insertAdjacentHTML sur valeur dynamique — sink XSS).
+        var hint = document.createElement('div'); hint.className = 'bourse-hint show';
+        var hp = document.createElement('p');
+        hp.appendChild(document.createTextNode('Promotion en cours : scolarité à '));
+        var hb = document.createElement('strong');
+        hb.textContent = fmt(D.promotion_locale.promo_annual_xof) + ' FCFA/an';
+        hp.appendChild(hb);
+        hp.appendChild(document.createTextNode(" jusqu'au " + D.promotion_locale.end_date
+          + " inclus. L'aperçu ci-dessous reste calculé sur le plein tarif."));
+        hint.appendChild(hp);
+        catsEl.parentNode.insertBefore(hint, catsEl);
+      }
       OPT = {};
       CATS.forEach(function(c){
         (c.scholarships || []).forEach(function(o){

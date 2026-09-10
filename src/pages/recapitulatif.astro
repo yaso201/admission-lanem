@@ -105,6 +105,18 @@ const etape = await getEntry('etapes', 'recapitulatif');
   .rc-fee-label strong { color: var(--text-primary); font-weight: 600; }
   .rc-fee-amt { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: var(--violet); white-space: nowrap; }
 
+  /* PROMO-LOCALE (DEC-343/344) : campagne + saisie code, meme langage visuel que rc-fee */
+  .rc-promo { margin-top: var(--space-5); padding: var(--space-5) var(--space-6); background: var(--surface-paper); border: 1px solid var(--ink-200); border-radius: var(--radius-lg); }
+  .rc-promo-camp { font-size: var(--text-sm); color: var(--text-primary); margin-bottom: var(--space-4); }
+  .rc-promo-camp strong { color: var(--violet); font-weight: 700; }
+  .rc-promo-camp .full { text-decoration: line-through; color: var(--text-secondary); }
+  .rc-promo-row { display: flex; gap: var(--space-3); align-items: center; }
+  .rc-promo-row input { flex: 1; min-width: 0; text-transform: uppercase; }
+  .rc-promo-msg { margin-top: var(--space-3); font-size: var(--text-sm); }
+  .rc-promo-msg.ok { color: var(--violet); font-weight: 600; }
+  .rc-promo-msg.ko { color: var(--clay-deep); }
+  .rc-promo-note { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-secondary); }
+
   /* ---- Breakpoint 480px ---- */
   @media (min-width: 480px) {
     .progress-steps-text { display: block; }
@@ -250,6 +262,18 @@ const etape = await getEntry('etapes', 'recapitulatif');
         <span class="rc-fee-amt" id="rc-fee-amt">—</span>
       </div>
 
+      <!-- PROMO-LOCALE (DEC-343/344) : campagne + code promo (scolarité uniquement) -->
+      <div class="rc-promo" id="rc-promo" hidden>
+        <p class="rc-promo-camp" id="rc-promo-camp" hidden></p>
+        <label for="rc-promo-input" class="sr-only">Code promo</label>
+        <div class="rc-promo-row">
+          <input type="text" class="em-input" id="rc-promo-input" placeholder="Code promo (facultatif)" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+          <button type="button" class="em-btn em-btn--secondary" id="rc-promo-apply">Appliquer</button>
+        </div>
+        <p class="rc-promo-msg" id="rc-promo-msg" hidden></p>
+        <p class="rc-promo-note">La réduction porte sur la <strong>scolarité annuelle</strong> uniquement — jamais sur les frais de candidature ou d'inscription. Le code doit être <strong>encore valable au paiement des frais de candidature</strong> : le tarif est figé à la confirmation du paiement.</p>
+      </div>
+
     </div>
   </div>
 </main>
@@ -267,7 +291,7 @@ const etape = await getEntry('etapes', 'recapitulatif');
 </div>
 
 
-<script is:inline src="/scripts/admission-tunnel.js?v=8"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=9"></script>
 <script is:inline src="/scripts/admission-profil.js"></script>
 <script is:inline>
 /* LOT F (F5) — récapitulatif RÉEL : tout vient de get_dossier (identité, programme,
@@ -371,6 +395,56 @@ const etape = await getEntry('etapes', 'recapitulatif');
     if (f1 && f1.montant_xof != null) {
       document.getElementById('rc-fee-amt').textContent = AT.fmtXOF(f1.montant_xof) + ' FCFA';
     }
+
+    /* PROMO-LOCALE (DEC-343/344/345) : campagne + saisie code. Rendu textContent (jamais innerHTML). */
+    var promoBloc = document.getElementById('rc-promo');
+    promoBloc.hidden = false;
+    if (d.promo_locale && d.promo_locale.entered_code) {
+      document.getElementById('rc-promo-input').value = d.promo_locale.entered_code;
+    }
+    AT.api.getFrais({}, function (fr) {
+      var pl = fr.ok && fr.data && fr.data.promotion_locale;
+      if (!pl) { return; }
+      var camp = document.getElementById('rc-promo-camp');
+      camp.hidden = false;
+      camp.textContent = '';
+      camp.appendChild(document.createTextNode('Promotion en cours : scolarité annuelle à '));
+      var b = document.createElement('strong');
+      b.textContent = AT.fmtXOF(pl.promo_annual_xof) + ' FCFA/an';
+      camp.appendChild(b);
+      if (fr.data.scolarite_annuelle != null) {
+        camp.appendChild(document.createTextNode(' '));
+        var full = document.createElement('span'); full.className = 'full';
+        full.textContent = AT.fmtXOF(fr.data.scolarite_annuelle) + ' FCFA';
+        camp.appendChild(full);
+      }
+      camp.appendChild(document.createTextNode(" — jusqu'au " + pl.end_date + ' inclus.'));
+    });
+    document.getElementById('rc-promo-apply').addEventListener('click', function () {
+      var code = document.getElementById('rc-promo-input').value;
+      var msg = document.getElementById('rc-promo-msg');
+      AT.api.setPromoCode({ dossier_id: AT.getDossierId(), token: AT.getDossierToken(), code: code },
+        function (res) {
+          msg.hidden = false;
+          if (!res.ok) {
+            msg.className = 'rc-promo-msg ko';
+            msg.textContent = (res.error && res.error.message) || 'Erreur — réessayez.';
+            return;
+          }
+          var v = res.data.validation;
+          if (v && v.valid) {
+            msg.className = 'rc-promo-msg ok';
+            msg.textContent = 'Code ' + res.data.entered_promo_code + ' appliqué : scolarité estimée '
+              + AT.fmtXOF(v.estimation.final_annual_xof) + " FCFA/an (valable jusqu'au " + v.end_date + ' inclus).';
+          } else if (res.data.entered_promo_code) {
+            msg.className = 'rc-promo-msg ko';
+            msg.textContent = 'Code invalide ou expiré.';
+          } else {
+            msg.className = 'rc-promo-msg';
+            msg.textContent = 'Code retiré.';
+          }
+        });
+    });
   });
 })();
 </script>

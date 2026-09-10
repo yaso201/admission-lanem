@@ -528,6 +528,16 @@
     _get('public.get_legal_documents', types ? { types: types } : {}, cb);
   }
 
+  /** PROMO-LOCALE (DEC-344) : validation publique d'un code promo — réponse générique. */
+  function validatePromoCode(params, cb) {
+    _get('local_promo.validate_promo_code', params || {}, cb);
+  }
+
+  /** PROMO-LOCALE (DEC-345) : pose/efface le code promo du dossier (token requis). */
+  function setPromoCode(payload, cb) {
+    _post('local_promo.set_promo_code', payload, cb);
+  }
+
   /** list_sessions : sessions d'admission ouvertes (publique). */
   function listSessions(programme, cb) {
     _get('public.list_sessions', programme ? { programme: programme } : {}, cb);
@@ -771,6 +781,8 @@
       processPayment: processPayment,
       getFrais: getFrais,
       getLegalDocuments: getLegalDocuments,
+      validatePromoCode: validatePromoCode,
+      setPromoCode: setPromoCode,
       listSessions: listSessions,
       listProgrammes: listProgrammes,
       downloadConvocation: downloadConvocation

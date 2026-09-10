@@ -151,6 +151,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     <div class="status-meta">
       <span class="num" id="sv-num">—</span>
       <span id="sv-session-meta" hidden><svg class="ico-sm"><use href="#i-cal"/></svg><span id="sv-session-txt"></span></span>
+      <!-- PROMO-LOCALE (DEC-345) : droit figé au frais 1 confirmé -->
+      <span id="sv-promo-meta" hidden><svg class="ico-sm"><use href="#i-info"/></svg><span id="sv-promo-txt"></span></span>
     </div>
   </div>
 
@@ -205,7 +207,7 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
   <p class="ro-note" id="sv-note" hidden><svg class="ico-sm"><use href="#i-lock"/></svg>Pour toute question, contactez le service des admissions — vos décisions vous sont aussi notifiées par e-mail.</p>
 </main>
 
-<script is:inline src="/scripts/admission-tunnel.js?v=8"></script>
+<script is:inline src="/scripts/admission-tunnel.js?v=9"></script>
 <script is:inline>
 /* LOT F (F6/F7/F8) — suivi 100 % DATA-DRIVEN sur get_dossier : statut, timeline,
    pièces, paiements, actions contextuelles (INC re-soumission, ACO dépôt diplôme,
@@ -697,6 +699,12 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       if (d.session.is_open && d.session.closes_on) { sTxt += ' · candidatures ouvertes jusqu’au ' + d.session.closes_on; }
       document.getElementById('sv-session-txt').textContent = sTxt;
       document.getElementById('sv-session-meta').hidden = false;
+    }
+    /* PROMO-LOCALE (DEC-345) : droit figé — scolarité garantie (textContent, jamais innerHTML). */
+    if (d.promo_locale && d.promo_locale.snapshot && d.promo_locale.snapshot.final_annual_xof != null) {
+      document.getElementById('sv-promo-txt').textContent =
+        'Scolarité annuelle garantie : ' + AT.fmtXOF(d.promo_locale.snapshot.final_annual_xof) + ' FCFA/an';
+      document.getElementById('sv-promo-meta').hidden = false;
     }
     show('sv-status');
 
