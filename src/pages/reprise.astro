@@ -185,10 +185,18 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     if (recoverEmail) { recoverEmail.focus(); }
   }
 
+  /* Validité annoncée par le back (data.otp_ttl_minutes) — cf. note identique dans
+     /identite : aucune durée recopiée côté front. */
+  var otpTtlMinutes = null;
+  function otpValiditeTexte() {
+    return otpTtlMinutes ? (' Il reste valable ' + otpTtlMinutes + ' minutes.') : '';
+  }
+
   function sendCode() {
     AT.api.requestOtp(function (res) {
       if (res.ok) {
-        msg(otpMsg, 'ok', 'Code envoyé à votre adresse e-mail.');
+        if (res.data && res.data.otp_ttl_minutes) { otpTtlMinutes = res.data.otp_ttl_minutes; }
+        msg(otpMsg, 'ok', 'Code envoyé à votre adresse e-mail.' + otpValiditeTexte());
         startTimer(60);
       } else if (res.error && res.error.code === 'INVALID_DOSSIER') {
         fallbackToRecover();

@@ -507,6 +507,17 @@ const etape = await getEntry('etapes', 'identite');
     el.otpMsg.textContent = text || '';
   }
 
+  /* Durée de validité du code : FOURNIE PAR LE BACK (request_otp → data.otp_ttl_minutes),
+     jamais recopiée ici. Une valeur en dur redeviendrait fausse au prochain ajustement du
+     TTL côté API — c'est précisément ce qui avait produit le « quelques minutes » vague.
+     Inconnue tant qu'aucun envoi n'a eu lieu dans cette page (retour sur un OTP déjà
+     demandé) → on reste volontairement flou plutôt que d'annoncer un chiffre non vérifié. */
+  var otpTtlMinutes = null;
+  function otpValiditeTexte() {
+    return otpTtlMinutes ? ('Il reste valable ' + otpTtlMinutes + ' minutes.')
+                         : 'Il reste valable quelques minutes.';
+  }
+
   function enterOtpPhase(sent) {
     phase = 'otp';
     [el.prenom, el.nom, el.dateNaissance, el.email, el.tel, el.niveau, el.datebac].forEach(function (f) { f.setAttribute('readonly', ''); });
@@ -529,7 +540,8 @@ const etape = await getEntry('etapes', 'identite');
   function requestCode(cb) {
     AT.api.requestOtp(function (res) {
       if (res.ok) {
-        otpMessage('ok', 'Code envoyé à ' + el.otpDest.textContent + '.');
+        if (res.data && res.data.otp_ttl_minutes) { otpTtlMinutes = res.data.otp_ttl_minutes; }
+        otpMessage('ok', 'Code envoyé à ' + el.otpDest.textContent + '. ' + otpValiditeTexte());
         startResendTimer(60);
       } else {
         otpMessage('error', (res.error && res.error.message) || 'Envoi du code impossible. Réessayez.');
@@ -652,7 +664,7 @@ const etape = await getEntry('etapes', 'identite');
       el.otpDest.textContent = 'votre adresse e-mail';
     }
     enterOtpPhase(false);
-    otpMessage('', 'Saisissez le code reçu par e-mail pour continuer — il reste valable quelques minutes. Sinon, demandez-en un nouveau.');
+    otpMessage('', 'Saisissez le code reçu par e-mail pour continuer. ' + otpValiditeTexte() + ' Sinon, demandez-en un nouveau.');
   } else {
     loadNiveaux();
   }
