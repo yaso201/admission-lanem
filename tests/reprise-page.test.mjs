@@ -129,6 +129,39 @@ test('liste post-OTP : bouton « Reprendre » ssi reprenable, indice ?dossier= s
   assert.equal(rows[1].classList.contains('is-hinted'), false);
 });
 
+test('ACC : non modifiable mais ACTIONNABLE → bouton « Accéder » (chemin vers les frais 2)', async () => {
+  /* Régression du 2026-09-22 : 7 admis sans aucun chemin vers le paiement des frais
+     d'inscription. Le front n'affichait le bouton que si `reprenable` — faux pour un ACC,
+     qui ne modifie plus rien mais doit encore payer. `actionnable` porte désormais la règle. */
+  const ACC = [
+    { dossier_id: '26272020008', statut: 'ACC', reprenable: false, actionnable: true,
+      programme: { code: 'LIC-RC', label: 'Licence RC' }, session: { id: 'S1', label: '2026 RC' } },
+    { dossier_id: '26272010099', statut: 'REF', reprenable: false, actionnable: false,
+      programme: { code: 'LIC-RC', label: 'Licence RC' }, session: { id: 'S1', label: '2026 RC' } },
+  ];
+  const ctx = loadReprise({ url: 'http://localhost/reprise/', routes: {
+    ...RECOVER_ROUTES,
+    'public.verify_recovery_otp': { ok: true, error: null,
+      data: { recovery_token: 'RTOK', expires_in_seconds: 1800, dossiers: ACC } },
+  } });
+  await tick();
+  await driveToList(ctx);
+  const rows = Array.from(ctx.document.querySelectorAll('.recovery-item'));
+  const accBtn = rows[0].querySelector('.recovery-item-claim');
+  assert.notEqual(accBtn, null, 'ACC actionnable → bouton présent');
+  assert.equal(accBtn.textContent, 'Accéder', 'libellé adapté : on accède, on ne « reprend » pas');
+  assert.equal(rows[1].querySelector('.recovery-item-claim'), null, 'REF → aucun bouton');
+});
+
+test('back antérieur au champ `actionnable` : repli sur `reprenable` (aucune régression)', async () => {
+  const ctx = loadReprise({ url: 'http://localhost/reprise/', routes: RECOVER_ROUTES });
+  await tick();
+  await driveToList(ctx);
+  const rows = Array.from(ctx.document.querySelectorAll('.recovery-item'));
+  assert.notEqual(rows[0].querySelector('.recovery-item-claim'), null, 'BRO sans actionnable → bouton');
+  assert.equal(rows[1].querySelector('.recovery-item-claim'), null, 'SOU sans actionnable → aucun bouton');
+});
+
 test('claim réussi : jeton adopté + routage tunnel engagé (get_dossier puis navigation)', async () => {
   const ctx = loadReprise({
     url: 'http://localhost/reprise/',

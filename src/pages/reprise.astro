@@ -303,14 +303,17 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       pieces.appendChild(li);
     });
     if (pieces.children.length) { body.appendChild(pieces); }
-    /* `reprenable` vient du BACK (DEC-332, front pur renderer) : aucun bouton trompeur
-       sur un dossier en lecture seule — consultation intacte pour tous les états. */
-    if (data.reprenable) {
+    /* `actionnable` vient du BACK (front pur renderer) : le bouton s'affiche dès qu'une
+       action candidat reste à mener — y compris sur un dossier NON modifiable (ACC : régler
+       les frais d'inscription, ACO : déposer le diplôme). `reprenable` ne pilote plus que le
+       LIBELLÉ. Repli sur `reprenable` si le back est antérieur à ce champ. */
+    var peutAgir = (data.actionnable !== undefined) ? data.actionnable : data.reprenable;
+    if (peutAgir) {
       var claimBtn = document.createElement('button');
       claimBtn.type = 'button';
       claimBtn.className = 'em-btn em-btn--primary';
       claimBtn.id = 'recovery-detail-claim';
-      claimBtn.textContent = 'Reprendre ce dossier';
+      claimBtn.textContent = data.reprenable ? 'Reprendre ce dossier' : 'Accéder à ce dossier';
       claimBtn.addEventListener('click', function () {
         claimDossier(data.dossier_id, document.getElementById('recovery-detail-msg'));
       });
@@ -350,13 +353,16 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       open.appendChild(title); open.appendChild(meta);
       open.addEventListener('click', function () { openRecoveredDossier(item.dossier_id); });
       row.appendChild(open);
-      /* Bouton « Reprendre » ssi le BACK le dit (`reprenable`, DEC-332) — le front rend, il
-         ne décide pas ; le serveur re-refusera de toute façon un claim forcé (409). */
-      if (item.reprenable) {
+      /* Bouton ssi le BACK le dit (`actionnable`) — le front rend, il ne décide pas ; le
+         serveur re-refusera de toute façon un claim forcé (409). Un ACC/ACO n'est pas
+         modifiable mais reste ACTIONNABLE : sans ce bouton, aucun chemin vers le paiement
+         des frais 2. Repli sur `reprenable` pour un back antérieur au champ. */
+      var itemAgir = (item.actionnable !== undefined) ? item.actionnable : item.reprenable;
+      if (itemAgir) {
         var claim = document.createElement('button');
         claim.type = 'button';
         claim.className = 'em-btn em-btn--primary recovery-item-claim';
-        claim.textContent = 'Reprendre';
+        claim.textContent = item.reprenable ? 'Reprendre' : 'Accéder';
         claim.addEventListener('click', function () {
           claimDossier(item.dossier_id, document.getElementById('recovery-results-msg'));
         });
