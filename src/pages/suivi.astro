@@ -777,10 +777,17 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
       goBtn.setAttribute('disabled', '');
       setMsg(dmsg, '', '');
     });
-    cb.addEventListener('change', function () {
+    /* État dérivé recalculé, jamais mémorisé sur le seul événement : le navigateur restaure
+       les cases (retour arrière, bfcache) sans émettre `change`. Ici le risque est inverse
+       de /recapitulatif — un bouton d'EFFACEMENT réactivé sans geste explicite serait pire
+       qu'un bouton grisé. La resynchronisation ferme donc le cas dans les deux sens. */
+    function syncDelete() {
       if (cb.checked) { goBtn.removeAttribute('disabled'); }
       else { goBtn.setAttribute('disabled', ''); }
-    });
+    }
+    cb.addEventListener('change', syncDelete);
+    window.addEventListener('pageshow', syncDelete);
+    syncDelete();
     goBtn.addEventListener('click', function () {
       goBtn.setAttribute('disabled', '');
       setMsg(dmsg, '', 'Effacement en cours…');

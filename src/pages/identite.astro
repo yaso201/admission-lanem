@@ -467,6 +467,11 @@ const etape = await getEntry('etapes', 'identite');
       f.addEventListener(evt, refreshGate);
     });
   });
+  /* Le navigateur RESTAURE champs et cases (retour arriere, bfcache, rechargement) sans
+     emettre `input`/`change` : le formulaire paraissait complet alors que la gate restait
+     fermee. `pageshow` recalcule l'etat dans les deux cas — chargement normal ET bfcache,
+     ou aucun script inline ne rejoue. Meme correctif que /recapitulatif. */
+  window.addEventListener('pageshow', refreshGate);
   el.dateNaissance.addEventListener('change', function () {
     if (el.dateNaissance.value && !birthDateValid()) {
       showFormError('La date de naissance doit correspondre à un âge compris entre 14 et 60 ans.');

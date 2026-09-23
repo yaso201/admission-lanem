@@ -512,6 +512,16 @@ const etape = await getEntry('etapes', 'paiement');
     });
   });
 
+  /* Restauration navigateur (retour arriere, bfcache) : les cases reviennent cochees sans
+     `change`. Ici la GARDE metier est deja sure — consentOk() relit `.checked` AU CLIC — mais
+     l'habillage (`is-on`) et le CTA restaient desynchronises. On resynchronise tout. */
+  function syncConsentUI() {
+    sopCheck.classList.toggle('is-on', sopCb.checked);
+    if (onlineCb) { onlineCheck.classList.toggle('is-on', onlineCb.checked); }
+    syncCta();
+  }
+  window.addEventListener('pageshow', syncConsentUI);
+
   sopCb.addEventListener('change', function () {
     sopCheck.classList.toggle('is-on', sopCb.checked);
     syncCta();

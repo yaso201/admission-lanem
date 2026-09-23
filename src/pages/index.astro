@@ -605,6 +605,12 @@ const etape = await getEntry('etapes', 'formation');
   }
 
   sel.addEventListener('change', loadSessions);
+  /* bfcache : au retour arriere le DOM est restaure FIGE et aucun script inline ne rejoue.
+     On resynchronise l'etat derive (CTA + progression) ; `persisted` distingue ce cas du
+     chargement normal, ou le script vient deja de tout calculer. */
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) { renderProgress(); renderCTA(); }
+  });
   toggle.addEventListener('click', function (e) {
     var b = e.target.closest('.bt-opt');
     if (b) { setToggle(b.dataset.bourse); }

@@ -321,6 +321,12 @@ const etape = await getEntry('etapes', 'recapitulatif');
     }
   }
   attest.addEventListener('change', refreshCta);
+  /* ÉTAT DÉRIVÉ = TOUJOURS RECALCULÉ, jamais memorise sur le seul evenement.
+     Le navigateur RESTAURE l'etat des cases (retour arriere, bfcache, rechargement) SANS
+     emettre `change` : la case apparaissait cochee et le bouton restait grise, sans issue
+     pour le candidat (constat 26273020002). `pageshow` couvre les deux cas — chargement
+     normal (persisted=false) ET restauration depuis le bfcache, ou aucun script ne rejoue. */
+  window.addEventListener('pageshow', refreshCta);
   refreshCta();
 
   function setText(id, value) { document.getElementById(id).textContent = value || '—'; }
