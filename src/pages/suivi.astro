@@ -230,7 +230,12 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     REJ: { label: 'Dossier non retenu', step: 1 },
     ACC: { label: 'Admission confirmée', step: 3 },
     DES: { label: 'Désistement', step: 3 },
-    INS: { label: 'Inscrit·e', step: 4 }
+    INS: { label: 'Inscrit·e', step: 4 },
+    /* ABS : le workflow back compte 14 etats, ce mapping n'en couvrait que 13. Le repli
+       `STATUS[d.statut] || { label: d.statut }` affichait alors le CODE BRUT « ABS » au
+       candidat, sans message et avec la timeline remise a l'etape 0. Etat atteignable des
+       qu'un candidat ne se presente pas a l'epreuve. */
+    ABS: { label: 'Absent·e au concours', step: 2 }
   };
   var STEPS = [
     { name: 'Dépôt de la candidature', icon: 'i-flag' },
@@ -252,7 +257,8 @@ import TunnelLayout from '../layouts/TunnelLayout.astro';
     REJ: 'Votre dossier n’a pas passé le contrôle documentaire — voir le détail ci-dessus.',
     ACC: 'Réservez votre place en réglant les frais d’inscription ci-dessus.',
     DES: 'Vous vous êtes désisté·e de cette candidature.',
-    INS: 'Bienvenue ! Votre inscription est finalisée.'
+    INS: 'Bienvenue ! Votre inscription est finalisée.',
+    ABS: 'Vous ne vous êtes pas présenté·e à l’épreuve du concours.'
   };
 
   function h(tag, cls, text) {
